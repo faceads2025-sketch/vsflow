@@ -1,6 +1,7 @@
 import fs from "fs";
 import path from "path";
 import type {
+  PipelineColumn,
   Broadcast,
   Campaign,
   Contact,
@@ -29,6 +30,17 @@ function seed() {
     companyName: "Companhia 207554",
     companyId: "207554",
   };
+
+  const pipelineColumns: PipelineColumn[] = [
+    { id: "col_novo", name: "Novo lead", color: "#3FC8E4", order: 0 },
+    { id: "col_andamento", name: "Em andamento", color: "#9A7BFF", order: 1 },
+    { id: "col_aguardando", name: "Aguardando resposta", color: "#F59E0B", order: 2 },
+    { id: "col_duvida", name: "Em dúvida", color: "#FBBF77", order: 3 },
+    { id: "col_naopagou", name: "Não pagou", color: "#EF4444", order: 4 },
+    { id: "col_pagou", name: "Pagou", color: "#10B981", order: 5 },
+    { id: "col_recuperar", name: "Recuperar depois", color: "#6366F1", order: 6 },
+    { id: "col_perdido", name: "Perdido", color: "#6B7280", order: 7 },
+  ];
 
   const tags: Tag[] = [
     { id: "t1", name: "Lead Quente", color: "#7DE3A6" },
@@ -65,11 +77,11 @@ function seed() {
   ];
 
   const contacts: Contact[] = [
-    { id: "ct1", name: "Kennedy Lima", phone: "+55 27 99820-5955", tags: ["t2"], campaignId: "c1", subscribedAt: "2026-06-02T11:27:00Z" },
-    { id: "ct2", name: "FV", phone: "+55 89 9436-9605", tags: ["t1"], campaignId: "c1", subscribedAt: "2026-06-02T11:14:00Z" },
-    { id: "ct3", name: "Regiana", phone: "+55 11 98477-1020", tags: ["t3"], subscribedAt: "2026-06-01T09:00:00Z" },
-    { id: "ct4", name: "Joana", phone: "+55 21 99111-2233", tags: ["t1", "t3"], subscribedAt: "2026-05-30T15:30:00Z" },
-    { id: "ct5", name: "Luana", phone: "+55 31 98888-7766", tags: ["t2"], subscribedAt: "2026-05-29T18:10:00Z" },
+    { id: "ct1", name: "Kennedy Lima", phone: "+55 27 99820-5955", tags: ["t2"], campaignId: "c1", subscribedAt: "2026-06-02T11:27:00Z", pipelineColumnId: "col_pagou", pipelineOrder: 0 },
+    { id: "ct2", name: "FV", phone: "+55 89 9436-9605", tags: ["t1"], campaignId: "c1", subscribedAt: "2026-06-02T11:14:00Z", pipelineColumnId: "col_novo", pipelineOrder: 0 },
+    { id: "ct3", name: "Regiana", phone: "+55 11 98477-1020", tags: ["t3"], subscribedAt: "2026-06-01T09:00:00Z", pipelineColumnId: "col_aguardando", pipelineOrder: 0 },
+    { id: "ct4", name: "Joana", phone: "+55 21 99111-2233", tags: ["t1", "t3"], subscribedAt: "2026-05-30T15:30:00Z", pipelineColumnId: "col_duvida", pipelineOrder: 0 },
+    { id: "ct5", name: "Luana", phone: "+55 31 98888-7766", tags: ["t2"], subscribedAt: "2026-05-29T18:10:00Z", pipelineColumnId: "col_novo", pipelineOrder: 1 },
   ];
 
   const flows: Flow[] = [
@@ -221,6 +233,7 @@ function seed() {
   return {
     account,
     tags,
+    pipelineColumns,
     campaigns,
     contacts,
     flows,

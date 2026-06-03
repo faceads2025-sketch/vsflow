@@ -26,6 +26,16 @@ export interface Contact {
   tags: string[];
   campaignId?: string;
   subscribedAt: string;
+  // pipeline (Kanban de leads)
+  pipelineColumnId?: string;
+  pipelineOrder?: number;
+}
+
+export interface PipelineColumn {
+  id: string;
+  name: string;
+  color: string;
+  order: number;
 }
 
 export interface Tag {

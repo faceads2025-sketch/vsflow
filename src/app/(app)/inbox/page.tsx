@@ -3,10 +3,13 @@
 import { useEffect, useRef, useState } from "react";
 import { Send, Paperclip, Image as ImageIcon, Mic, Bot, BotOff, Search, RefreshCw, Trash2, ArrowLeft } from "lucide-react";
 import { formatTime } from "@/lib/utils";
-import type { Conversation } from "@/lib/types";
+import type { Conversation, PipelineColumn } from "@/lib/types";
+
+type Conv = Conversation & { phone?: string; pipelineColumnId?: string };
 
 export default function InboxPage() {
-  const [convs, setConvs] = useState<Conversation[]>([]);
+  const [convs, setConvs] = useState<Conv[]>([]);
+  const [columns, setColumns] = useState<PipelineColumn[]>([]);
   const [activeId, setActiveId] = useState<string | null>(null);
   const [text, setText] = useState("");
   const [search, setSearch] = useState("");
@@ -94,8 +97,21 @@ export default function InboxPage() {
   }
 
   async function load() {
-    const data = await fetch("/api/inbox").then((r) => r.json());
+    const [data, cols] = await Promise.all([
+      fetch("/api/inbox").then((r) => r.json()),
+      fetch("/api/pipeline/columns").then((r) => r.json()).catch(() => []),
+    ]);
     setConvs(data);
+    setColumns(cols);
+    // abre uma conversa específica via ?open=<contactId> (clique no card do Pipeline)
+    const openContact = typeof window !== "undefined" ? new URLSearchParams(window.location.search).get("open") : null;
+    if (openContact) {
+      const c = data.find((x: Conv) => x.contactId === openContact);
+      if (c) {
+        setActiveId(c.id);
+        return;
+      }
+    }
     // auto-seleciona só no desktop (no mobile mostra a lista primeiro)
     const isDesktop = typeof window !== "undefined" && window.innerWidth >= 1024;
     setActiveId((cur) => cur ?? (isDesktop ? data[0]?.id ?? null : null));
@@ -107,6 +123,16 @@ export default function InboxPage() {
   }, []);
 
   const active = convs.find((c) => c.id === activeId);
+
+  async function setStatus(columnId: string) {
+    if (!active?.contactId) return;
+    setConvs((prev) => prev.map((c) => (c.id === active.id ? { ...c, pipelineColumnId: columnId } : c)));
+    await fetch("/api/pipeline/move", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ contactId: active.contactId, columnId }),
+    });
+  }
 
   useEffect(() => {
     bottomRef.current?.scrollIntoView({ behavior: "smooth" });
@@ -213,11 +239,24 @@ export default function InboxPage() {
                 <p className="truncate text-xs text-ink-faint">{active.botPaused ? `Automação pausada • ${active.assignedTo ?? "atendente"}` : "Automação ativa"}</p>
               </div>
             </div>
-            <button onClick={toggleBot}
-              className={`flex shrink-0 items-center gap-2 rounded-full px-3 py-2 text-sm font-medium sm:px-4 ${active.botPaused ? "bg-emerald-100 text-emerald-700" : "bg-amber-100 text-amber-700"}`}>
-              {active.botPaused ? <Bot className="h-4 w-4" /> : <BotOff className="h-4 w-4" />}
-              <span className="hidden sm:inline">{active.botPaused ? "Reativar automação" : "Assumir conversa"}</span>
-            </button>
+            <div className="flex shrink-0 items-center gap-2">
+              {/* status do pipeline (move o card no Kanban) */}
+              <select
+                value={active.pipelineColumnId || ""}
+                onChange={(e) => setStatus(e.target.value)}
+                title="Status no Pipeline"
+                className="max-w-[150px] rounded-full border border-gray-200 bg-white px-3 py-2 text-xs font-medium outline-none focus:border-brand-400"
+                style={{ color: columns.find((c) => c.id === active.pipelineColumnId)?.color }}
+              >
+                <option value="">Status...</option>
+                {columns.map((c) => <option key={c.id} value={c.id}>{c.name}</option>)}
+              </select>
+              <button onClick={toggleBot}
+                className={`flex items-center gap-2 rounded-full px-3 py-2 text-sm font-medium ${active.botPaused ? "bg-emerald-100 text-emerald-700" : "bg-amber-100 text-amber-700"}`}>
+                {active.botPaused ? <Bot className="h-4 w-4" /> : <BotOff className="h-4 w-4" />}
+                <span className="hidden lg:inline">{active.botPaused ? "Reativar" : "Assumir"}</span>
+              </button>
+            </div>
           </div>
 
           <div className="flex-1 space-y-3 overflow-y-auto p-6">
