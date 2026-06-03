@@ -248,7 +248,12 @@ export default function InboxPage() {
               <div className="flex items-center gap-2 rounded-2xl border border-gray-200 px-3 py-2">
                 <label className="cursor-pointer text-ink-faint hover:text-ink" title="Enviar arquivo">
                   <Paperclip className="h-5 w-5" />
-                  <input type="file" className="hidden" onChange={(e) => e.target.files?.[0] && sendMedia(e.target.files[0], "file")} />
+                  <input type="file" className="hidden" onChange={(e) => {
+                    const f = e.target.files?.[0];
+                    if (!f) return;
+                    const t = f.type.startsWith("image") ? "image" : f.type.startsWith("video") ? "video" : f.type.startsWith("audio") ? "audio" : "file";
+                    sendMedia(f, t);
+                  }} />
                 </label>
                 <label className="cursor-pointer text-ink-faint hover:text-ink" title="Enviar imagem/vídeo">
                   <ImageIcon className="h-5 w-5" />
