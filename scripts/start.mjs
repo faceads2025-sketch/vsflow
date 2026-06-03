@@ -52,8 +52,9 @@ const MODE = effectiveMode();
 console.log(`[start] modo=${MODE} — subindo app na porta ${PORT}`);
 run("web", "npx", ["next", "start", "-p", PORT]);
 
-// só sobe o gateway Baileys no modo "web". Em "zapi"/"cloud"/"mock" não precisa.
-if (MODE === "web") {
+// Sobe o gateway Baileys SEMPRE (a menos que RUN_WA_GATEWAY=false), pra o modo
+// "WhatsApp Web" poder conectar via QR dentro do próprio app, sem terminal.
+if (process.env.RUN_WA_GATEWAY !== "false") {
   console.log("[start] subindo gateway WhatsApp Web (Baileys) na porta 4001");
   run("wa", "npx", ["tsx", "src/server/wa-gateway.ts"]);
 }
