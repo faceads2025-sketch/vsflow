@@ -107,6 +107,13 @@ export default function InboxPage() {
     await load();
   }
 
+  async function mergeDuplicates() {
+    if (!confirm("Juntar conversas duplicadas da mesma pessoa? (mantém o histórico)")) return;
+    const r = await fetch("/api/inbox/merge-duplicates", { method: "POST" }).then((x) => x.json());
+    await load();
+    alert(r.mergedContacts ? `${r.mergedContacts} conversa(s) duplicada(s) juntada(s).` : "Nenhuma duplicada encontrada.");
+  }
+
   async function load() {
     const [data, cols, fl] = await Promise.all([
       fetch("/api/inbox").then((r) => r.json()),
@@ -216,6 +223,10 @@ export default function InboxPage() {
           <div className="mb-3 flex items-center justify-between">
             <h1 className="text-xl font-bold">Inbox</h1>
             <div className="flex items-center gap-1">
+              <button onClick={mergeDuplicates} title="Juntar conversas duplicadas da mesma pessoa"
+                className="rounded-lg px-2 py-1 text-xs font-medium text-ink-faint transition hover:bg-gray-100">
+                Mesclar
+              </button>
               <button onClick={clearDemo} title="Remover conversas de demonstração"
                 className="rounded-lg px-2 py-1 text-xs font-medium text-ink-faint transition hover:bg-gray-100">
                 Limpar demo
