@@ -252,9 +252,17 @@ export async function handleInboundForFlow(conv: Conversation, contact: Contact,
   if (kw?.flowId) {
     const flow = db.flows.find((f) => f.id === kw.flowId);
     if (flow) {
+      console.log(`[flow] palavra-chave "${kw.word}" -> ${flow.name} (${contact.phone})`);
       await startFlow(flow, conv, contact);
       return { handled: true, via: "keyword", flow: flow.name };
     }
+  }
+
+  // se a conversa já teve qualquer mensagem do bot, o boas-vindas já rolou -> trava (migra contatos antigos)
+  const botJaFalou = conv.messages.some((m) => m.fromBot);
+  if (botJaFalou && !contact.welcomeSent) {
+    contact.welcomeSent = true;
+    return { handled: false, via: "ja-respondido" };
   }
 
   // fluxo padrão de boas-vindas: SÓ UMA VEZ por contato (não repete a cada mensagem)
@@ -262,12 +270,13 @@ export async function handleInboundForFlow(conv: Conversation, contact: Contact,
     const flow = db.flows.find((f) => f.isDefault && f.status === "published");
     if (flow) {
       contact.welcomeSent = true; // trava: não dispara de novo
+      console.log(`[flow] boas-vindas (1x) -> ${flow.name} (${contact.phone})`);
       await startFlow(flow, conv, contact);
       return { handled: true, via: "default", flow: flow.name };
     }
   }
 
-  return { handled: false };
+  return { handled: false, via: "nada" };
 }
 
 // Compat: execução simples a partir do início (usado por testes/campanha sem conversa)
