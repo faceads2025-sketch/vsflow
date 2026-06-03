@@ -38,11 +38,13 @@ export async function POST(req: NextRequest) {
   g.__zapiLast!.unshift({ at: new Date().toISOString(), keys: Object.keys(p), payload: p });
   g.__zapiLast = g.__zapiLast!.slice(0, 8);
 
-  if (p.fromMe || p.isGroup) return NextResponse.json({ status: "ignored", reason: "fromMe/group" });
+  // ignora grupos, newsletter e atualizações de status (não são conversas 1:1)
+  if (p.isGroup || p.isNewsletter || p.isStatusReply) return NextResponse.json({ status: "ignored", reason: "grupo/status" });
 
   // dedupe: ignora reenvios do mesmo messageId
   if (alreadySeen(p.messageId || p.id)) return NextResponse.json({ status: "duplicate" });
 
+  const fromMe = p.fromMe === true; // mensagem que VOCÊ enviou (entra como "enviada")
   const phone: string = p.phone || p.participantPhone || p.connectedPhone || "";
   if (!phone) return NextResponse.json({ status: "ignored", reason: "sem phone" });
 
@@ -59,21 +61,21 @@ export async function POST(req: NextRequest) {
   if (!text && !mediaUrl) return NextResponse.json({ status: "ignored", reason: "sem texto/midia", keys: Object.keys(p) });
 
   const preview = text || `[${type}]`;
+  // identidade do contato = o parceiro da conversa (chatName/photo), nunca o seu nome em msgs fromMe
   const { contact, conv } = upsertConversation({
     phone,
-    name: p.senderName || p.chatName || p.notifyName,
-    avatar: p.senderPhoto || p.photo,
+    name: p.chatName || p.senderName || p.notifyName,
+    avatar: p.photo || (!fromMe ? p.senderPhoto : undefined),
     preview,
     timestamp: new Date().toISOString(),
-    unreadInc: 1,
+    unreadInc: fromMe ? 0 : 1, // só conta não-lida pra mensagem recebida
   });
 
-  // marca de qual número/conexão é esse contato (pra responder pelo número certo)
   if (connectionId) contact.connectionId = connectionId;
 
   conv.messages.push({
     id: uid("msg"),
-    direction: "inbound",
+    direction: fromMe ? "outbound" : "inbound",
     type: type as any,
     content: text || `[${type}]`,
     mediaUrl,
@@ -84,11 +86,13 @@ export async function POST(req: NextRequest) {
   conv.lastMessageAt = new Date().toISOString();
   conv.preview = preview;
 
-  const isFirstMessage = conv.messages.length === 1;
-  // roda o fluxo em segundo plano e responde já (evita timeout/reenvio do Z-API)
-  handleInboundForFlow(conv, contact, text, isFirstMessage).catch((e) => console.error("[zapi] fluxo:", e));
+  // só dispara automação/fluxo em mensagem RECEBIDA (não no que você mesmo envia)
+  if (!fromMe) {
+    const isFirstMessage = conv.messages.length === 1;
+    handleInboundForFlow(conv, contact, text, isFirstMessage).catch((e) => console.error("[zapi] fluxo:", e));
+  }
 
-  return NextResponse.json({ status: "received", type, hasMedia: !!mediaUrl });
+  return NextResponse.json({ status: "received", direction: fromMe ? "outbound" : "inbound", type });
 }
 
 // GET = inspeção dos últimos payloads recebidos (diagnóstico)
