@@ -98,7 +98,11 @@ export async function sendMedia({ to, type, url, caption }: { to: string; type: 
   const publicUrl =
     process.env.APP_URL ||
     (process.env.RAILWAY_PUBLIC_DOMAIN ? `https://${process.env.RAILWAY_PUBLIC_DOMAIN}` : "http://localhost:3000");
-  const absUrl = url.startsWith("http") ? url : `${publicUrl}${url}`;
+  let absUrl = url.startsWith("http") ? url : `${publicUrl}${url}`;
+  // áudio: o app guarda MP3 (player), mas envia a versão OGG/OPUS irmã (nota de voz)
+  if (type === "audio" && /\/api\/files\/.+\.mp3$/i.test(absUrl)) {
+    absUrl = absUrl.replace(/\.mp3$/i, ".ogg");
+  }
   const MODE = getMode();
 
   if (MODE === "zapi") {

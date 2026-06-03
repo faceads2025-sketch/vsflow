@@ -6,20 +6,19 @@ import path from "path";
 
 export const runtime = "nodejs";
 
-// converte áudio (webm/ogg/...) para MP3 — toca em todos os navegadores (Safari incluso)
-// e o Z-API aceita mp3 e entrega como nota de voz.
-async function toMp3(buf: Buffer): Promise<Buffer | null> {
+// converte áudio para um formato alvo (mp3 p/ tocar no app, ogg/opus p/ enviar como voz)
+async function convertAudio(buf: Buffer, target: "mp3" | "ogg"): Promise<Buffer | null> {
   try {
-    const base = path.join(tmpdir(), `up-${Date.now()}`);
+    const base = path.join(tmpdir(), `up-${Date.now()}-${target}`);
     const inPath = base + ".in";
-    const outPath = base + ".mp3";
+    const outPath = base + "." + target;
     await writeFile(inPath, buf);
+    const args =
+      target === "mp3"
+        ? ["-y", "-i", inPath, "-c:a", "libmp3lame", "-ac", "1", "-ar", "44100", "-b:a", "64k", outPath]
+        : ["-y", "-i", inPath, "-c:a", "libopus", "-ac", "1", "-ar", "16000", "-b:a", "24k", "-application", "voip", "-vbr", "on", outPath];
     await new Promise<void>((resolve, reject) => {
-      const ff = spawn("ffmpeg", [
-        "-y", "-i", inPath,
-        "-c:a", "libmp3lame", "-ac", "1", "-ar", "44100", "-b:a", "64k",
-        outPath,
-      ]);
+      const ff = spawn("ffmpeg", args);
       ff.on("error", reject);
       ff.on("close", (c) => (c === 0 ? resolve() : reject(new Error("ffmpeg " + c))));
     });
@@ -28,7 +27,7 @@ async function toMp3(buf: Buffer): Promise<Buffer | null> {
     rm(outPath, { force: true });
     return out;
   } catch (e) {
-    console.error("[upload] conversão de áudio falhou:", e);
+    console.error(`[upload] conversão de áudio (${target}) falhou:`, e);
     return null;
   }
 }
@@ -80,12 +79,24 @@ export async function POST(req: NextRequest) {
 
   let safe = file.name.replace(/[^a-zA-Z0-9._-]/g, "_");
 
-  // áudio gravado no navegador (webm/ogg) -> normaliza p/ mp3 (toca em qualquer navegador + Z-API)
+  // áudio: salva MP3 (player do app) E uma versão OGG/OPUS irmã (envio como nota de voz)
   if ((file.type || "").startsWith("audio/")) {
-    const mp3 = await toMp3(bytes);
+    const mp3 = await convertAudio(bytes, "mp3");
+    const ogg = await convertAudio(bytes, "ogg");
     if (mp3) {
       bytes = mp3;
-      safe = safe.replace(/\.[^.]+$/, "") + ".mp3";
+      const baseName = `${Date.now()}-${safe.replace(/\.[^.]+$/, "")}`;
+      safe = baseName + ".mp3";
+      // grava o irmão .ogg (mesmo nome base) para o envio via Z-API/Cloud
+      if (ogg) {
+        try {
+          await writeFile(path.join(dir, baseName + ".ogg"), ogg);
+        } catch (e) {
+          console.error("[upload] falha ao salvar ogg:", e);
+        }
+      }
+      await writeFile(path.join(dir, safe), bytes);
+      return NextResponse.json({ url: `/api/files/${safe}`, name: file.name, type: "audio/mpeg", size: bytes.length });
     }
   } else if ((file.type || "").startsWith("video/")) {
     // vídeo (mov/hevc/webm/...) -> mp4 H.264 (toca em qualquer navegador e no WhatsApp)
