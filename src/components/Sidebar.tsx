@@ -15,6 +15,7 @@ import {
   LayoutGrid,
   PanelLeftClose,
   PanelLeftOpen,
+  LogOut,
 } from "lucide-react";
 import { cn } from "@/lib/utils";
 
@@ -45,6 +46,11 @@ export default function Sidebar({ onNavigate }: { onNavigate?: () => void }) {
       localStorage.setItem("cf-sidebar-collapsed", v ? "0" : "1");
       return !v;
     });
+  }
+
+  async function logout() {
+    await fetch("/api/auth/logout", { method: "POST" });
+    window.location.href = "/login";
   }
 
   return (
@@ -100,11 +106,14 @@ export default function Sidebar({ onNavigate }: { onNavigate?: () => void }) {
       <div className={cn("flex items-center gap-2 border-t border-gray-100 py-4", collapsed ? "justify-center px-0" : "px-4")}>
         <span className="h-2 w-2 shrink-0 rounded-full bg-accent-green" />
         {!collapsed && (
-          <div className="text-xs leading-tight">
-            <p className="font-medium text-ink">Companhia 207554</p>
+          <div className="min-w-0 flex-1 text-xs leading-tight">
+            <p className="truncate font-medium text-ink">Companhia 207554</p>
             <p className="text-ink-faint">ID 207554</p>
           </div>
         )}
+        <button onClick={logout} title="Sair" className="shrink-0 text-ink-faint transition hover:text-red-500">
+          <LogOut className="h-[18px] w-[18px]" />
+        </button>
       </div>
     </aside>
   );

@@ -23,6 +23,12 @@ function mediaUrlOf(node: any): string | undefined {
 
 // Webhook de mensagens recebidas do Z-API ("Ao receber").
 export async function POST(req: NextRequest) {
+  // proteção opcional: se WEBHOOK_SECRET estiver definido, exige ?key=SECRET
+  const secret = process.env.WEBHOOK_SECRET;
+  if (secret && new URL(req.url).searchParams.get("key") !== secret) {
+    return NextResponse.json({ error: "unauthorized" }, { status: 401 });
+  }
+
   const p = await req.json().catch(() => ({}));
 
   // registra para diagnóstico
