@@ -4,24 +4,27 @@ import { useEffect, useState } from "react";
 import { Upload, Download, UserPlus, Filter, X } from "lucide-react";
 import { PageHeader, Badge } from "@/components/ui";
 import { formatDateTime } from "@/lib/utils";
-import type { Contact, Tag } from "@/lib/types";
+import type { Contact, Tag, PipelineColumn } from "@/lib/types";
 
 export default function ContactsPage() {
   const [contacts, setContacts] = useState<Contact[]>([]);
   const [tags, setTags] = useState<Tag[]>([]);
+  const [columns, setColumns] = useState<PipelineColumn[]>([]);
   const [campaigns, setCampaigns] = useState<{ id: string; name: string }[]>([]);
   const [search, setSearch] = useState("");
   const [tagFilter, setTagFilter] = useState("");
   const [open, setOpen] = useState(false);
 
   async function load() {
-    const [c, m] = await Promise.all([
+    const [c, m, cols] = await Promise.all([
       fetch("/api/contacts").then((r) => r.json()),
       fetch("/api/meta").then((r) => r.json()),
+      fetch("/api/pipeline/columns").then((r) => r.json()).catch(() => []),
     ]);
     setContacts(c);
     setTags(m.tags);
     setCampaigns(m.campaigns);
+    setColumns(cols);
   }
   useEffect(() => {
     load();
@@ -112,6 +115,15 @@ export default function ContactsPage() {
                   <td className="px-6 py-3 text-ink-soft">{c.phone}</td>
                   <td className="px-6 py-3">
                     <div className="flex flex-wrap gap-1">
+                      {(() => {
+                        const col = columns.find((k) => k.id === c.pipelineColumnId);
+                        return col ? (
+                          <span className="pill font-semibold" style={{ background: col.color + "22", color: col.color }}>
+                            <span className="mr-1 inline-block h-1.5 w-1.5 rounded-full align-middle" style={{ background: col.color }} />
+                            {col.name}
+                          </span>
+                        ) : null;
+                      })()}
                       {c.tags.map((id) => {
                         const t = tagName(id);
                         return t ? <span key={id} className="pill" style={{ background: t.color + "22", color: t.color }}>{t.name}</span> : null;
