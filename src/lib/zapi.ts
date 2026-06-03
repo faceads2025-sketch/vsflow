@@ -43,7 +43,9 @@ function normalizePhone(phone: string) {
 }
 
 export async function zapiSendText(phone: string, message: string) {
-  return post("/send-text", { phone: normalizePhone(phone), message });
+  // delayTyping: mostra "digitando..." por alguns segundos antes de enviar (mais humano)
+  const delayTyping = Math.min(6, Math.max(1, Math.round(message.length / 25)));
+  return post("/send-text", { phone: normalizePhone(phone), message, delayTyping });
 }
 
 export async function zapiSendMedia(opts: {
