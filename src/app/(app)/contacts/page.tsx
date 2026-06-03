@@ -81,7 +81,7 @@ export default function ContactsPage() {
         }
       />
 
-      <div className="px-8">
+      <div className="px-4 sm:px-8">
         <div className="flex items-center gap-3 pb-4">
           <div className="flex items-center gap-2 rounded-full bg-brand-400 px-4 py-2 text-sm font-medium text-white">
             <Filter className="h-4 w-4" /> Filtros
@@ -95,8 +95,8 @@ export default function ContactsPage() {
           <input className="input max-w-xs" placeholder="Busca" value={search} onChange={(e) => setSearch(e.target.value)} />
         </div>
 
-        <div className="card overflow-hidden">
-          <table className="w-full text-sm">
+        <div className="card overflow-x-auto">
+          <table className="w-full min-w-[640px] text-sm">
             <thead>
               <tr className="border-b border-gray-100 text-left text-ink-faint">
                 <th className="px-6 py-3 font-medium">Usuários</th>

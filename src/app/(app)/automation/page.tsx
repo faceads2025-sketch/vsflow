@@ -41,7 +41,7 @@ export default function AutomationPage() {
         title="Automação"
         action={tab === "keywords" ? <button className="btn-primary" onClick={() => setOpenKw(true)}><Plus className="h-4 w-4" /> Criar</button> : undefined}
       />
-      <div className="px-8">
+      <div className="px-4 sm:px-8">
         <div className="mb-5 flex gap-2">
           {tabs.map((t) => {
             const Icon = t.icon;
@@ -55,8 +55,8 @@ export default function AutomationPage() {
         </div>
 
         {tab === "keywords" && (
-          <div className="card overflow-hidden">
-            <table className="w-full text-sm">
+          <div className="card overflow-x-auto">
+            <table className="w-full min-w-[640px] text-sm">
               <thead>
                 <tr className="border-b border-gray-100 text-left text-ink-faint">
                   <th className="px-6 py-3 font-medium">Palavra-chave</th>
@@ -103,8 +103,8 @@ export default function AutomationPage() {
         )}
 
         {tab === "webhooks" && (
-          <div className="card overflow-hidden">
-            <table className="w-full text-sm">
+          <div className="card overflow-x-auto">
+            <table className="w-full min-w-[640px] text-sm">
               <thead>
                 <tr className="border-b border-gray-100 text-left text-ink-faint">
                   <th className="px-6 py-3 font-medium">Nome</th>

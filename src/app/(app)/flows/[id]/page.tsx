@@ -103,16 +103,16 @@ export default function FlowBuilder() {
   }
 
   return (
-    <div className="flex h-screen flex-col">
+    <div className="flex h-full flex-col">
       {/* topbar */}
-      <div className="flex items-center gap-3 border-b border-gray-100 bg-white px-5 py-3">
-        <button onClick={() => router.push("/flows")} className="text-ink-soft hover:text-ink"><ArrowLeft className="h-5 w-5" /></button>
-        <input className="rounded-lg px-2 py-1 text-lg font-semibold outline-none hover:bg-gray-50 focus:bg-gray-50" value={name} onChange={(e) => setName(e.target.value)} />
-        <span className={`pill ${status === "published" ? "bg-emerald-100 text-emerald-700" : "bg-gray-100 text-gray-600"}`}>{status === "published" ? "Publicado" : "Rascunho"}</span>
-        <div className="ml-auto flex gap-2">
-          <button className="btn-ghost" onClick={testRun}><Play className="h-4 w-4" /> Testar</button>
-          <button className="btn-ghost" disabled={saving} onClick={() => save(false)}><Save className="h-4 w-4" /> Salvar</button>
-          <button className="btn-primary" disabled={saving} onClick={() => save(true)}>Publicar</button>
+      <div className="flex items-center gap-2 border-b border-gray-100 bg-white px-3 py-2 sm:gap-3 sm:px-5 sm:py-3">
+        <button onClick={() => router.push("/flows")} className="shrink-0 text-ink-soft hover:text-ink"><ArrowLeft className="h-5 w-5" /></button>
+        <input className="min-w-0 flex-1 rounded-lg px-2 py-1 text-base font-semibold outline-none hover:bg-gray-50 focus:bg-gray-50 sm:flex-none sm:text-lg" value={name} onChange={(e) => setName(e.target.value)} />
+        <span className={`pill hidden sm:inline-flex ${status === "published" ? "bg-emerald-100 text-emerald-700" : "bg-gray-100 text-gray-600"}`}>{status === "published" ? "Publicado" : "Rascunho"}</span>
+        <div className="ml-auto flex shrink-0 gap-1.5 sm:gap-2">
+          <button className="btn-ghost !px-3" onClick={testRun} title="Testar"><Play className="h-4 w-4" /> <span className="hidden sm:inline">Testar</span></button>
+          <button className="btn-ghost !px-3" disabled={saving} onClick={() => save(false)} title="Salvar"><Save className="h-4 w-4" /> <span className="hidden sm:inline">Salvar</span></button>
+          <button className="btn-primary !px-3" disabled={saving} onClick={() => save(true)}>Publicar</button>
         </div>
       </div>
 
@@ -180,7 +180,7 @@ export default function FlowBuilder() {
         </div>
 
         {/* inspector — aparece só ao selecionar um bloco, some ao clicar fora */}
-        {selected && <Inspector node={selected} onChange={updateSelected} onDelete={deleteSelected} />}
+        {selected && <Inspector node={selected} onChange={updateSelected} onDelete={deleteSelected} onClose={() => setSelectedId(null)} />}
       </div>
     </div>
   );

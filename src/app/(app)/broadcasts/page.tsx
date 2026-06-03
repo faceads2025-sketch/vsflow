@@ -44,7 +44,7 @@ export default function BroadcastsPage() {
         title="Transmissão"
         action={<button className="btn-primary" onClick={() => setOpen(true)}><Plus className="h-4 w-4" /> Criar Nova Transmissão</button>}
       />
-      <div className="px-8">
+      <div className="px-4 sm:px-8">
         <div className="mb-5 flex gap-2">
           {tabs.map((t) => {
             const Icon = t.icon;
@@ -60,8 +60,8 @@ export default function BroadcastsPage() {
         {filtered.length === 0 ? (
           <p className="py-20 text-center text-ink-faint">Não há transmissões aqui.</p>
         ) : (
-          <div className="card overflow-hidden">
-            <table className="w-full text-sm">
+          <div className="card overflow-x-auto">
+            <table className="w-full min-w-[640px] text-sm">
               <thead>
                 <tr className="border-b border-gray-100 text-left text-ink-faint">
                   <th className="px-6 py-3 font-medium">Nome</th>

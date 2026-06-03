@@ -21,7 +21,7 @@ export default function TemplatesPage() {
   return (
     <div className="pb-12">
       <PageHeader title="Modelos" action={<button className="btn-primary" onClick={() => setOpen(true)}><Plus className="h-4 w-4" /> Criar modelo</button>} />
-      <div className="px-8">
+      <div className="px-4 sm:px-8">
         {templates.length === 0 ? (
           <EmptyState title="Ainda não há modelos" description="Crie o seu primeiro modelo" action={<button className="btn-primary" onClick={() => setOpen(true)}>Criar</button>} />
         ) : (

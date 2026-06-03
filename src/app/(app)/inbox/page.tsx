@@ -1,7 +1,7 @@
 "use client";
 
 import { useEffect, useRef, useState } from "react";
-import { Send, Paperclip, Image as ImageIcon, Mic, Bot, BotOff, Search, RefreshCw, Trash2 } from "lucide-react";
+import { Send, Paperclip, Image as ImageIcon, Mic, Bot, BotOff, Search, RefreshCw, Trash2, ArrowLeft } from "lucide-react";
 import { formatTime } from "@/lib/utils";
 import type { Conversation } from "@/lib/types";
 
@@ -96,7 +96,9 @@ export default function InboxPage() {
   async function load() {
     const data = await fetch("/api/inbox").then((r) => r.json());
     setConvs(data);
-    setActiveId((cur) => cur ?? data[0]?.id ?? null);
+    // auto-seleciona só no desktop (no mobile mostra a lista primeiro)
+    const isDesktop = typeof window !== "undefined" && window.innerWidth >= 1024;
+    setActiveId((cur) => cur ?? (isDesktop ? data[0]?.id ?? null : null));
   }
   useEffect(() => {
     load();
@@ -157,9 +159,9 @@ export default function InboxPage() {
   }
 
   return (
-    <div className="flex h-screen">
+    <div className="flex h-full">
       {/* Lista */}
-      <div className="flex w-80 shrink-0 flex-col border-r border-gray-100 bg-white">
+      <div className={`${activeId ? "hidden lg:flex" : "flex"} w-full shrink-0 flex-col border-r border-gray-100 bg-white lg:w-80`}>
         <div className="border-b border-gray-100 p-4">
           <div className="mb-3 flex items-center justify-between">
             <h1 className="text-xl font-bold">Inbox</h1>
@@ -200,24 +202,28 @@ export default function InboxPage() {
       {/* Chat */}
       {active ? (
         <div className="flex flex-1 flex-col bg-[#f7f9fb]">
-          <div className="flex items-center justify-between border-b border-gray-100 bg-white px-6 py-4">
-            <div className="flex items-center gap-3">
+          <div className="flex items-center justify-between gap-2 border-b border-gray-100 bg-white px-4 py-3 sm:px-6 sm:py-4">
+            <div className="flex min-w-0 items-center gap-3">
+              <button onClick={() => setActiveId(null)} className="text-ink-soft lg:hidden" aria-label="Voltar">
+                <ArrowLeft className="h-5 w-5" />
+              </button>
               <Avatar name={active.contactName} src={active.avatar} />
-              <div>
-                <p className="font-semibold">{active.contactName}</p>
-                <p className="text-xs text-ink-faint">{active.botPaused ? `Automação pausada • ${active.assignedTo ?? "atendente"}` : "Automação ativa"}</p>
+              <div className="min-w-0">
+                <p className="truncate font-semibold">{active.contactName}</p>
+                <p className="truncate text-xs text-ink-faint">{active.botPaused ? `Automação pausada • ${active.assignedTo ?? "atendente"}` : "Automação ativa"}</p>
               </div>
             </div>
             <button onClick={toggleBot}
-              className={`flex items-center gap-2 rounded-full px-4 py-2 text-sm font-medium ${active.botPaused ? "bg-emerald-100 text-emerald-700" : "bg-amber-100 text-amber-700"}`}>
-              {active.botPaused ? <><Bot className="h-4 w-4" /> Reativar automação</> : <><BotOff className="h-4 w-4" /> Assumir conversa</>}
+              className={`flex shrink-0 items-center gap-2 rounded-full px-3 py-2 text-sm font-medium sm:px-4 ${active.botPaused ? "bg-emerald-100 text-emerald-700" : "bg-amber-100 text-amber-700"}`}>
+              {active.botPaused ? <Bot className="h-4 w-4" /> : <BotOff className="h-4 w-4" />}
+              <span className="hidden sm:inline">{active.botPaused ? "Reativar automação" : "Assumir conversa"}</span>
             </button>
           </div>
 
           <div className="flex-1 space-y-3 overflow-y-auto p-6">
             {active.messages.map((m) => (
               <div key={m.id} className={`flex ${m.direction === "outbound" ? "justify-end" : "justify-start"}`}>
-                <div className={`max-w-[60%] rounded-2xl px-4 py-2 text-sm shadow-sm ${m.direction === "outbound" ? "bg-brand-400 text-white" : "bg-white"}`}>
+                <div className={`max-w-[80%] rounded-2xl px-4 py-2 text-sm shadow-sm sm:max-w-[60%] ${m.direction === "outbound" ? "bg-brand-400 text-white" : "bg-white"}`}>
                   {m.fromBot && <p className="mb-0.5 text-[10px] font-semibold uppercase opacity-70">🤖 Bot</p>}
                   {m.mediaUrl && m.type === "image" && <img src={m.mediaUrl} alt="" className="mb-1 max-h-52 rounded-lg" />}
                   {m.mediaUrl && m.type === "video" && <video src={m.mediaUrl} controls className="mb-1 max-h-52 rounded-lg" />}
@@ -273,7 +279,7 @@ export default function InboxPage() {
           </div>
         </div>
       ) : (
-        <div className="grid flex-1 place-items-center text-ink-faint">Nenhum chat selecionado, por favor selecione um dos chats</div>
+        <div className="hidden flex-1 place-items-center px-6 text-center text-ink-faint lg:grid">Nenhum chat selecionado, por favor selecione um dos chats</div>
       )}
     </div>
   );

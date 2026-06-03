@@ -16,7 +16,7 @@ export default function DashboardPage() {
   return (
     <div className="pb-12">
       <Topbar />
-      <div className="px-8">
+      <div className="px-4 sm:px-8">
         <div className="mt-2">
           <h2 className="text-3xl font-bold tracking-tight">
             Bem-vindo, Kennedy <span className="align-middle">👋</span>

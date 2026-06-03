@@ -30,17 +30,17 @@ export default function SettingsPage() {
   return (
     <div className="pb-12">
       <PageHeader title="Configurações" />
-      <div className="flex gap-8 px-8">
-        <nav className="w-48 shrink-0 space-y-1">
+      <div className="flex flex-col gap-4 px-4 sm:flex-row sm:gap-8 sm:px-8">
+        <nav className="flex w-full gap-1 overflow-x-auto pb-1 sm:w-48 sm:shrink-0 sm:flex-col sm:space-y-1 sm:overflow-visible sm:pb-0">
           {sections.map((s) => (
             <button key={s} onClick={() => setActive(s)}
-              className={`block w-full rounded-lg px-3 py-2 text-left text-sm font-medium transition ${active === s ? "bg-brand-50 text-brand-600" : "text-ink-soft hover:bg-gray-50"}`}>
+              className={`shrink-0 whitespace-nowrap rounded-lg px-3 py-2 text-left text-sm font-medium transition sm:w-full ${active === s ? "bg-brand-50 text-brand-600" : "text-ink-soft hover:bg-gray-50"}`}>
               {s}
             </button>
           ))}
         </nav>
 
-        <div className="flex-1">
+        <div className="min-w-0 flex-1">
           {!data ? (
             <p className="text-ink-faint">Carregando...</p>
           ) : (

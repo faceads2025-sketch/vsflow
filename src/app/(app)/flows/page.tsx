@@ -46,7 +46,7 @@ export default function FlowsPage() {
           </div>
         }
       />
-      <div className="px-8">
+      <div className="px-4 sm:px-8">
         <p className="pb-3 text-sm font-medium text-ink-soft">Todos os Fluxos</p>
         <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
           {flows.map((f) => (

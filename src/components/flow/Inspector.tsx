@@ -1,6 +1,6 @@
 "use client";
 
-import { Trash2 } from "lucide-react";
+import { Trash2, X } from "lucide-react";
 import type { Node } from "reactflow";
 import { blockByType } from "./blocks";
 import type { FlowNodeType } from "@/lib/types";
@@ -11,10 +11,12 @@ export default function Inspector({
   node,
   onChange,
   onDelete,
+  onClose,
 }: {
   node: Node | null;
   onChange: (data: any) => void;
   onDelete: () => void;
+  onClose?: () => void;
 }) {
   if (!node) {
     return (
@@ -29,10 +31,13 @@ export default function Inspector({
   const set = (patch: any) => onChange({ ...data, ...patch });
 
   return (
-    <div className="flex w-72 shrink-0 flex-col border-l border-gray-100 bg-white">
+    <div className="fixed inset-y-0 right-0 z-30 flex w-full max-w-xs flex-col border-l border-gray-100 bg-white shadow-soft lg:static lg:z-auto lg:w-72 lg:shadow-none">
       <div className="flex items-center justify-between border-b border-gray-100 px-5 py-4">
         <p className="font-semibold" style={{ color: meta.color }}>{meta.label}</p>
-        <button onClick={onDelete} className="text-red-400 hover:text-red-600"><Trash2 className="h-4 w-4" /></button>
+        <div className="flex items-center gap-3">
+          <button onClick={onDelete} className="text-red-400 hover:text-red-600"><Trash2 className="h-4 w-4" /></button>
+          {onClose && <button onClick={onClose} className="text-ink-faint hover:text-ink lg:hidden"><X className="h-5 w-5" /></button>}
+        </div>
       </div>
 
       <div className="flex-1 space-y-4 overflow-y-auto p-5 text-sm">

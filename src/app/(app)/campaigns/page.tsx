@@ -38,10 +38,10 @@ export default function CampaignsPage() {
         }
       />
 
-      <div className="px-8">
+      <div className="px-4 sm:px-8">
         <p className="pb-3 text-sm text-ink-faint">Todas as Campanhas</p>
-        <div className="card overflow-hidden">
-          <table className="w-full text-sm">
+        <div className="card overflow-x-auto">
+          <table className="w-full min-w-[640px] text-sm">
             <thead>
               <tr className="border-b border-gray-100 text-left text-ink-faint">
                 <th className="px-6 py-3 font-medium">Campanha</th>
