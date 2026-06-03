@@ -15,10 +15,11 @@ function startNodeOf(flow: Flow): FlowNode | undefined {
 function nextNodeId(flow: Flow, nodeId: string, handle?: string): string | undefined {
   const edges = flow.edges.filter((e) => e.source === nodeId);
   if (handle) {
-    const m = edges.find((e) => e.sourceHandle === handle);
-    if (m) return m.target;
+    // saída específica: retorna só o que casa (sem fallback p/ não vazar caminho)
+    return edges.find((e) => e.sourceHandle === handle)?.target;
   }
-  return edges[0]?.target;
+  // padrão ("Próximo passo"): edge sem handle, ou marcada "next", senão a primeira
+  return (edges.find((e) => !e.sourceHandle) || edges.find((e) => e.sourceHandle === "next") || edges[0])?.target;
 }
 
 // registra mensagem do bot na conversa + envia pelo WhatsApp
@@ -99,6 +100,7 @@ async function runFrom(flow: Flow, conv: Conversation, contact: Contact, fromNod
       case "question":
         await emit(conv, contact, "text", node.data.text || "");
         conv.flowState = { flowId: flow.id, nodeId: node.id, vars };
+        scheduleNoReply(flow, conv, contact, node); // agenda caminho "não respondeu"
         return; // espera resposta
       case "buttons": {
         const buttons = node.data.buttons || [];
@@ -162,6 +164,28 @@ async function runFrom(flow: Flow, conv: Conversation, contact: Contact, fromNod
   conv.flowState = undefined;
 }
 
+// agenda o caminho "Se não responder" de um bloco de Pergunta (timeout configurável)
+function scheduleNoReply(flow: Flow, conv: Conversation, contact: Contact, node: FlowNode) {
+  const val = Number(node.data.waitValue || 0);
+  if (!val) return; // sem tempo definido -> espera indefinidamente
+  const unit = node.data.waitUnit || "minutos";
+  const mult = unit === "segundos" ? 1000 : unit === "horas" ? 3600000 : 60000;
+  const nid = node.id;
+  setTimeout(() => {
+    const f = db.flows.find((x) => x.id === flow.id);
+    const c = db.conversations.find((x) => x.id === conv.id);
+    if (!f || !c) return;
+    // só dispara se o contato AINDA está esperando neste mesmo bloco (ou seja, não respondeu)
+    if (c.flowState?.nodeId !== nid) return;
+    const ct = db.contacts.find((x) => x.id === c.contactId);
+    if (!ct) return;
+    const next = nextNodeId(f, nid, "noreply") ?? nextNodeId(f, nid); // "não respondeu" ou próximo passo
+    c.flowState = { flowId: f.id, nodeId: nid, vars: c.flowState?.vars };
+    if (next) runFrom(f, c, ct, next).catch(() => {});
+    else c.flowState = undefined;
+  }, val * mult);
+}
+
 // inicia um fluxo do começo
 export async function startFlow(flow: Flow, conv: Conversation, contact: Contact) {
   flow.executions = (flow.executions || 0) + 1;
@@ -180,7 +204,7 @@ export async function advanceFlow(conv: Conversation, contact: Contact, reply: s
     return false;
   }
 
-  let handle: string | undefined;
+  let next: string | undefined;
   const vars = state.vars || {};
 
   if (node.type === "buttons") {
@@ -188,12 +212,15 @@ export async function advanceFlow(conv: Conversation, contact: Contact, reply: s
     const idx = parseInt(reply.trim(), 10) - 1;
     let btn = !isNaN(idx) && buttons[idx] ? buttons[idx] : undefined;
     if (!btn) btn = buttons.find((b: any) => reply.toLowerCase().includes((b.label || "").toLowerCase()));
-    handle = btn?.id;
+    next = nextNodeId(flow, node.id, btn?.id);
   } else if (node.type === "question") {
     if (node.data.saveTo) vars[node.data.saveTo] = reply;
+    // respondeu -> saída "respondeu"; senão, próximo passo
+    next = nextNodeId(flow, node.id, "answered") ?? nextNodeId(flow, node.id);
+  } else {
+    next = nextNodeId(flow, node.id);
   }
 
-  const next = nextNodeId(flow, node.id, handle);
   // mantém as variáveis acumuladas para o runFrom ler
   conv.flowState = { flowId: flow.id, nodeId: node.id, vars };
   await runFrom(flow, conv, contact, next);

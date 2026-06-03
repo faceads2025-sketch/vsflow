@@ -113,6 +113,14 @@ function FlowNodeComponent({ data, type, selected }: NodeProps) {
   const meta = blockByType(type as FlowNodeType);
   const Icon = (Icons as any)[meta.icon] ?? Icons.Circle;
   const isButtons = type === "buttons";
+  const isQuestion = type === "question";
+
+  // saídas do bloco de Pergunta (cada uma com seu conector)
+  const questionOuts = [
+    { id: "answered", label: "Respondeu", color: "#10B981" },
+    { id: "noreply", label: "Se não responder", color: "#F59E0B" },
+    { id: "next", label: "Próximo passo", color: "#3FC8E4" },
+  ];
 
   return (
     <div
@@ -141,6 +149,15 @@ function FlowNodeComponent({ data, type, selected }: NodeProps) {
                 style={{ top: "50%" }}
                 className="!h-3 !w-3 !bg-amber-400"
               />
+            </div>
+          ))}
+        </div>
+      ) : isQuestion ? (
+        <div className="space-y-1 border-t border-gray-100 px-3 py-2">
+          {questionOuts.map((o) => (
+            <div key={o.id} className="relative rounded-lg bg-gray-50 px-2 py-1 text-[11px]" style={{ color: o.color }}>
+              {o.label}
+              <Handle id={o.id} type="source" position={Position.Right} style={{ top: "50%", background: o.color }} className="!h-3 !w-3" />
             </div>
           ))}
         </div>

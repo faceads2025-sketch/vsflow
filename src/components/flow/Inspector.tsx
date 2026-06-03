@@ -55,6 +55,29 @@ export default function Inspector({
           </Field>
         )}
 
+        {node.type === "question" && (
+          <Field label="Tempo de espera (caminho 'Se não responder')">
+            <div className="flex items-center gap-2">
+              <input type="number" min={0} className="input" placeholder="0 = aguardar sempre"
+                value={data.waitValue ?? 0} onChange={(e) => set({ waitValue: Number(e.target.value) })} />
+              <select className="input !w-auto" value={data.waitUnit || "minutos"} onChange={(e) => set({ waitUnit: e.target.value })}>
+                <option value="segundos">segundos</option>
+                <option value="minutos">minutos</option>
+                <option value="horas">horas</option>
+              </select>
+            </div>
+          </Field>
+        )}
+
+        {node.type === "question" && (
+          <div className="rounded-xl bg-gray-50 p-3 text-xs text-ink-soft">
+            <p className="mb-1 font-medium text-ink">Saídas deste bloco:</p>
+            <p>🟢 <b>Respondeu</b> — quando o lead responde.</p>
+            <p>🟠 <b>Se não responder</b> — após o tempo acima sem resposta.</p>
+            <p>🔵 <b>Próximo passo</b> — fallback (usado quando a saída específica não está ligada).</p>
+          </div>
+        )}
+
         {(node.type === "image" || node.type === "video" || node.type === "audio") && (
           <>
             <Field label="Arquivo">
