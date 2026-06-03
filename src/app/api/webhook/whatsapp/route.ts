@@ -81,3 +81,5 @@ export async function POST(req: NextRequest) {
 
   return NextResponse.json({ status: "received", matchedKeyword: kw?.word ?? null, flowRun: run });
 }
+
+export const dynamic = "force-dynamic";

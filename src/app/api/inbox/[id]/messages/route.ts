@@ -37,3 +37,5 @@ export async function POST(req: NextRequest, { params }: { params: { id: string 
   conv.preview = body.type === "text" ? body.content : `[${body.type}]`;
   return NextResponse.json(msg, { status: 201 });
 }
+
+export const dynamic = "force-dynamic";

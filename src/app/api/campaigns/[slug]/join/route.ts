@@ -41,3 +41,5 @@ export async function POST(req: NextRequest, { params }: { params: { slug: strin
 
   return NextResponse.json({ ok: true, contact, campaign: campaign.name, flowRun: run });
 }
+
+export const dynamic = "force-dynamic";

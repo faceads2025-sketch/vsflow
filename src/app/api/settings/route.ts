@@ -11,3 +11,5 @@ export async function GET() {
     flows: db.flows.map((f) => ({ id: f.id, name: f.name, isDefault: f.isDefault })),
   });
 }
+
+export const dynamic = "force-dynamic";

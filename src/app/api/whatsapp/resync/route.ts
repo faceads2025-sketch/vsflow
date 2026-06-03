@@ -11,3 +11,5 @@ export async function POST() {
     return NextResponse.json({ error: "Gateway WhatsApp Web offline. Rode `npm run wa`." }, { status: 503 });
   }
 }
+
+export const dynamic = "force-dynamic";

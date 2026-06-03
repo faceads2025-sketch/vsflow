@@ -34,3 +34,5 @@ export async function POST(req: NextRequest) {
   db.campaigns.unshift(campaign);
   return NextResponse.json(campaign, { status: 201 });
 }
+
+export const dynamic = "force-dynamic";

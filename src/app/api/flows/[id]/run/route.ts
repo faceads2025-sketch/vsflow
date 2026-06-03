@@ -13,3 +13,5 @@ export async function POST(req: NextRequest, { params }: { params: { id: string 
   const run = await runFlow(flow, { phone: contact.phone, name: contact.name });
   return NextResponse.json({ ok: true, run });
 }
+
+export const dynamic = "force-dynamic";

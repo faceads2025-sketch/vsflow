@@ -8,3 +8,5 @@ export async function POST() {
     return NextResponse.json({ error: "Gateway offline" }, { status: 503 });
   }
 }
+
+export const dynamic = "force-dynamic";

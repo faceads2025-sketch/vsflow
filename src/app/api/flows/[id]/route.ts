@@ -27,3 +27,5 @@ export async function DELETE(_req: NextRequest, { params }: { params: { id: stri
   if (idx >= 0) db.flows.splice(idx, 1);
   return NextResponse.json({ ok: true });
 }
+
+export const dynamic = "force-dynamic";

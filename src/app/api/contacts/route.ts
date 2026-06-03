@@ -22,3 +22,5 @@ export async function POST(req: NextRequest) {
   db.contacts.unshift(contact);
   return NextResponse.json(contact, { status: 201 });
 }
+
+export const dynamic = "force-dynamic";

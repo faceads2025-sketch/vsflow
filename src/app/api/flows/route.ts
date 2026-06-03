@@ -36,3 +36,5 @@ export async function POST(req: NextRequest) {
   db.flows.unshift(flow);
   return NextResponse.json(flow, { status: 201 });
 }
+
+export const dynamic = "force-dynamic";

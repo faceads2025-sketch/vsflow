@@ -9,3 +9,5 @@ export async function POST(_req: NextRequest, { params }: { params: { id: string
   conv.assignedTo = conv.botPaused ? "Kennedy" : undefined;
   return NextResponse.json({ botPaused: conv.botPaused });
 }
+
+export const dynamic = "force-dynamic";

@@ -10,3 +10,5 @@ export async function GET() {
     sequences: db.sequences.map((s) => ({ id: s.id, name: s.name })),
   });
 }
+
+export const dynamic = "force-dynamic";

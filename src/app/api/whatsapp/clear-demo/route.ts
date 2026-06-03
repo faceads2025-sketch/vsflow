@@ -7,3 +7,5 @@ export async function POST() {
   db.contacts.length = 0;
   return NextResponse.json({ ok: true });
 }
+
+export const dynamic = "force-dynamic";

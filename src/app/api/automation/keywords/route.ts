@@ -16,3 +16,5 @@ export async function POST(req: NextRequest) {
   db.keywords.unshift(kw);
   return NextResponse.json(kw, { status: 201 });
 }
+
+export const dynamic = "force-dynamic";

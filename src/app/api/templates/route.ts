@@ -20,3 +20,5 @@ export async function POST(req: NextRequest) {
   db.templates.unshift(template);
   return NextResponse.json(template, { status: 201 });
 }
+
+export const dynamic = "force-dynamic";

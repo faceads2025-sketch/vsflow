@@ -29,3 +29,5 @@ export async function POST(req: NextRequest) {
   const url = `/uploads/${filename}`;
   return NextResponse.json({ url, name: file.name, type: file.type, size: file.size });
 }
+
+export const dynamic = "force-dynamic";

@@ -24,3 +24,5 @@ export async function GET() {
     medianClose: "18m",
   });
 }
+
+export const dynamic = "force-dynamic";

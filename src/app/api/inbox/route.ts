@@ -7,3 +7,5 @@ export async function GET() {
     .sort((a, b) => +new Date(b.lastMessageAt) - +new Date(a.lastMessageAt));
   return NextResponse.json(list);
 }
+
+export const dynamic = "force-dynamic";
