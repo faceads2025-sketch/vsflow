@@ -8,3 +8,5 @@ dist
 public/uploads/*
 !public/uploads/.gitkeep
 .wa-auth
+
+.data

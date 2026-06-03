@@ -1,3 +1,5 @@
+import fs from "fs";
+import path from "path";
 import type {
   Broadcast,
   Campaign,
@@ -236,9 +238,42 @@ function seed() {
 
 type Store = ReturnType<typeof seed>;
 
-const g = globalThis as unknown as { __conversaflow?: Store };
+// Persistência em disco (volume /data no Railway) — sobrevive a redeploys.
+const DATA_DIR = process.env.DATA_DIR || path.join(process.cwd(), ".data");
+const STORE_FILE = path.join(DATA_DIR, "store.json");
 
-export const db: Store = g.__conversaflow ?? (g.__conversaflow = seed());
+function loadOrSeed(): Store {
+  try {
+    if (fs.existsSync(STORE_FILE)) {
+      const saved = JSON.parse(fs.readFileSync(STORE_FILE, "utf8"));
+      return { ...seed(), ...saved }; // mescla c/ seed (caso surjam campos novos)
+    }
+  } catch (e) {
+    console.error("[store] falha ao carregar:", e);
+  }
+  return seed();
+}
+
+const g = globalThis as unknown as { __conversaflow?: Store; __cfStoreTimer?: any };
+
+export const db: Store = g.__conversaflow ?? (g.__conversaflow = loadOrSeed());
+
+// salva automaticamente quando algo muda (compara serialização p/ não gravar à toa)
+if (!g.__cfStoreTimer) {
+  let last = "";
+  g.__cfStoreTimer = setInterval(() => {
+    try {
+      const cur = JSON.stringify(db);
+      if (cur !== last) {
+        fs.mkdirSync(DATA_DIR, { recursive: true });
+        fs.writeFileSync(STORE_FILE, cur);
+        last = cur;
+      }
+    } catch (e) {
+      console.error("[store] falha ao salvar:", e);
+    }
+  }, 5000);
+}
 
 export function uid(prefix = "id") {
   // determinístico o suficiente para mock; sem Date.now em runtime do servidor é ok aqui
