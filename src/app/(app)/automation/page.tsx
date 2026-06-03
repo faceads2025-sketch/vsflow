@@ -1,7 +1,7 @@
 "use client";
 
 import { useEffect, useState } from "react";
-import { Plus, Tag as TagIcon, Webhook as WebhookIcon, ListOrdered, X, Clock } from "lucide-react";
+import { Plus, Tag as TagIcon, Webhook as WebhookIcon, ListOrdered, X, Clock, Trash2 } from "lucide-react";
 import { PageHeader, Badge } from "@/components/ui";
 import type { Keyword, Sequence, Webhook } from "@/lib/types";
 
@@ -35,6 +35,12 @@ export default function AutomationPage() {
     load();
   }, []);
 
+  async function removeKeyword(id: string, word: string) {
+    if (!confirm(`Excluir a palavra-chave "${word}"?`)) return;
+    await fetch(`/api/automation/keywords/${id}`, { method: "DELETE" });
+    load();
+  }
+
   return (
     <div className="pb-12">
       <PageHeader
@@ -62,6 +68,7 @@ export default function AutomationPage() {
                   <th className="px-6 py-3 font-medium">Palavra-chave</th>
                   <th className="px-6 py-3 font-medium">Correspondência</th>
                   <th className="px-6 py-3 font-medium">Fluxo iniciado</th>
+                  <th className="px-6 py-3 font-medium"></th>
                 </tr>
               </thead>
               <tbody>
@@ -70,9 +77,14 @@ export default function AutomationPage() {
                     <td className="px-6 py-3 font-medium">“{k.word}”</td>
                     <td className="px-6 py-3"><Badge color="blue">{k.matchType}</Badge></td>
                     <td className="px-6 py-3 text-ink-soft">{flows.find((f) => f.id === k.flowId)?.name ?? "—"}</td>
+                    <td className="px-6 py-3 text-right">
+                      <button onClick={() => removeKeyword(k.id, k.word)} className="text-red-400 transition hover:text-red-600" title="Excluir palavra-chave">
+                        <Trash2 className="h-4 w-4" />
+                      </button>
+                    </td>
                   </tr>
                 ))}
-                {keywords.length === 0 && <tr><td colSpan={3} className="px-6 py-10 text-center text-ink-faint">Nenhuma palavra-chave criada.</td></tr>}
+                {keywords.length === 0 && <tr><td colSpan={4} className="px-6 py-10 text-center text-ink-faint">Nenhuma palavra-chave criada.</td></tr>}
               </tbody>
             </table>
           </div>
