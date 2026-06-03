@@ -3,8 +3,18 @@ import { uid, upsertConversation } from "@/lib/mock-data";
 import { handleInboundForFlow } from "@/lib/flow-engine";
 
 // guarda os últimos payloads crus para diagnóstico (GET nesta mesma rota)
-const g = globalThis as unknown as { __zapiLast?: any[] };
+const g = globalThis as unknown as { __zapiLast?: any[]; __zapiSeen?: string[] };
 g.__zapiLast = g.__zapiLast || [];
+g.__zapiSeen = g.__zapiSeen || [];
+
+// evita processar a mesma mensagem 2x (Z-API reenvia o webhook se demorar a responder)
+function alreadySeen(id?: string) {
+  if (!id) return false;
+  if (g.__zapiSeen!.includes(id)) return true;
+  g.__zapiSeen!.unshift(id);
+  g.__zapiSeen = g.__zapiSeen!.slice(0, 300);
+  return false;
+}
 
 function mediaUrlOf(node: any): string | undefined {
   if (!node) return undefined;
@@ -20,6 +30,9 @@ export async function POST(req: NextRequest) {
   g.__zapiLast = g.__zapiLast!.slice(0, 8);
 
   if (p.fromMe || p.isGroup) return NextResponse.json({ status: "ignored", reason: "fromMe/group" });
+
+  // dedupe: ignora reenvios do mesmo messageId
+  if (alreadySeen(p.messageId || p.id)) return NextResponse.json({ status: "duplicate" });
 
   const phone: string = p.phone || p.participantPhone || p.connectedPhone || "";
   if (!phone) return NextResponse.json({ status: "ignored", reason: "sem phone" });
@@ -60,9 +73,10 @@ export async function POST(req: NextRequest) {
   conv.preview = preview;
 
   const isFirstMessage = conv.messages.length === 1;
-  const result = await handleInboundForFlow(conv, contact, text, isFirstMessage);
+  // roda o fluxo em segundo plano e responde já (evita timeout/reenvio do Z-API)
+  handleInboundForFlow(conv, contact, text, isFirstMessage).catch((e) => console.error("[zapi] fluxo:", e));
 
-  return NextResponse.json({ status: "received", type, hasMedia: !!mediaUrl, ...result });
+  return NextResponse.json({ status: "received", type, hasMedia: !!mediaUrl });
 }
 
 // GET = inspeção dos últimos payloads recebidos (diagnóstico)
