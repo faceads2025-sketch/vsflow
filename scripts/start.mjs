@@ -34,9 +34,15 @@ function run(name, cmd, args) {
   procs.push(p);
 }
 
-console.log(`[start] subindo app (porta ${PORT}) + gateway WhatsApp Web (4001)`);
+const MODE = (process.env.WHATSAPP_MODE || "web").toLowerCase();
+console.log(`[start] modo=${MODE} — subindo app na porta ${PORT}`);
 run("web", "npx", ["next", "start", "-p", PORT]);
-run("wa", "npx", ["tsx", "src/server/wa-gateway.ts"]);
+
+// só sobe o gateway Baileys no modo "web". Em "zapi"/"cloud"/"mock" não precisa.
+if (MODE === "web") {
+  console.log("[start] subindo gateway WhatsApp Web (Baileys) na porta 4001");
+  run("wa", "npx", ["tsx", "src/server/wa-gateway.ts"]);
+}
 
 process.on("SIGTERM", () => shutdown("SIGTERM"));
 process.on("SIGINT", () => shutdown("SIGINT"));
