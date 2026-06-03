@@ -1,15 +1,26 @@
 "use client";
 
 import { useEffect, useRef, useState } from "react";
-import { Send, Paperclip, Image as ImageIcon, Mic, Bot, BotOff, Search, RefreshCw, Trash2, ArrowLeft, ChevronDown, Check } from "lucide-react";
-import { formatTime } from "@/lib/utils";
+import { Send, Paperclip, Image as ImageIcon, Mic, Bot, BotOff, Search, RefreshCw, Trash2, ArrowLeft, ChevronDown, Check, Info, X, Workflow } from "lucide-react";
+import { formatTime, formatDateTime } from "@/lib/utils";
 import type { Conversation, PipelineColumn } from "@/lib/types";
 
-type Conv = Conversation & { phone?: string; pipelineColumnId?: string };
+type Conv = Conversation & {
+  phone?: string;
+  email?: string;
+  campaignId?: string;
+  tagIds?: string[];
+  subscribedAt?: string;
+  pipelineColumnId?: string;
+  connectionId?: string;
+  connectionLabel?: string | null;
+};
 
 export default function InboxPage() {
   const [convs, setConvs] = useState<Conv[]>([]);
   const [columns, setColumns] = useState<PipelineColumn[]>([]);
+  const [flows, setFlows] = useState<{ id: string; name: string; status: string }[]>([]);
+  const [showInfo, setShowInfo] = useState(false);
   const [activeId, setActiveId] = useState<string | null>(null);
   const [text, setText] = useState("");
   const [search, setSearch] = useState("");
@@ -97,12 +108,14 @@ export default function InboxPage() {
   }
 
   async function load() {
-    const [data, cols] = await Promise.all([
+    const [data, cols, fl] = await Promise.all([
       fetch("/api/inbox").then((r) => r.json()),
       fetch("/api/pipeline/columns").then((r) => r.json()).catch(() => []),
+      fetch("/api/flows").then((r) => r.json()).catch(() => []),
     ]);
     setConvs(data);
     setColumns(cols);
+    setFlows(fl);
     // abre uma conversa específica via ?open=<contactId> (clique no card do Pipeline)
     const openContact = typeof window !== "undefined" ? new URLSearchParams(window.location.search).get("open") : null;
     if (openContact) {
@@ -123,6 +136,17 @@ export default function InboxPage() {
   }, []);
 
   const active = convs.find((c) => c.id === activeId);
+
+  async function runFlowManual(flowId: string) {
+    if (!active) return;
+    await fetch(`/api/inbox/${active.id}/run-flow`, {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ flowId }),
+    });
+    setShowInfo(false);
+    setTimeout(load, 800);
+  }
 
   async function setStatus(columnId: string) {
     if (!active?.contactId) return;
@@ -233,13 +257,20 @@ export default function InboxPage() {
               <button onClick={() => setActiveId(null)} className="text-ink-soft lg:hidden" aria-label="Voltar">
                 <ArrowLeft className="h-5 w-5" />
               </button>
-              <Avatar name={active.contactName} src={active.avatar} />
-              <div className="min-w-0">
-                <p className="truncate font-semibold">{active.contactName}</p>
-                <p className="truncate text-xs text-ink-faint">{active.botPaused ? `Automação pausada • ${active.assignedTo ?? "atendente"}` : "Automação ativa"}</p>
-              </div>
+              <button onClick={() => setShowInfo(true)} className="flex min-w-0 items-center gap-3 text-left">
+                <Avatar name={active.contactName} src={active.avatar} />
+                <div className="min-w-0">
+                  <p className="truncate font-semibold">{active.contactName}</p>
+                  <p className="truncate text-xs text-ink-faint">
+                    {active.connectionLabel ? `📱 ${active.connectionLabel}` : active.botPaused ? "Automação pausada" : "Automação ativa"}
+                  </p>
+                </div>
+              </button>
             </div>
             <div className="flex shrink-0 items-center gap-2">
+              <button onClick={() => setShowInfo(true)} title="Informações do contato" className="grid h-9 w-9 place-items-center rounded-full text-ink-faint transition hover:bg-gray-100">
+                <Info className="h-5 w-5" />
+              </button>
               {/* status do pipeline (move o card no Kanban) */}
               <StatusSelect columns={columns} value={active.pipelineColumnId} onChange={setStatus} />
               <button onClick={toggleBot}
@@ -311,6 +342,78 @@ export default function InboxPage() {
       ) : (
         <div className="hidden flex-1 place-items-center px-6 text-center text-ink-faint lg:grid">Nenhum chat selecionado, por favor selecione um dos chats</div>
       )}
+
+      {/* Modal de informações do contato + enviar fluxo manual */}
+      {showInfo && active && (
+        <div className="fixed inset-0 z-50 flex justify-end bg-black/30" onClick={() => setShowInfo(false)}>
+          <div className="flex h-full w-full max-w-sm flex-col bg-white shadow-soft" onClick={(e) => e.stopPropagation()}>
+            <div className="flex items-center justify-between border-b border-gray-100 px-5 py-4">
+              <h3 className="font-semibold">Informações do contato</h3>
+              <button onClick={() => setShowInfo(false)}><X className="h-5 w-5 text-ink-faint" /></button>
+            </div>
+
+            <div className="flex-1 space-y-5 overflow-y-auto p-5">
+              <div className="flex flex-col items-center gap-2 text-center">
+                {active.avatar ? (
+                  // eslint-disable-next-line @next/next/no-img-element
+                  <img src={active.avatar} alt="" className="h-20 w-20 rounded-full object-cover" />
+                ) : (
+                  <div className="grid h-20 w-20 place-items-center rounded-full bg-gray-200 text-2xl font-semibold text-gray-600">{active.contactName.charAt(0).toUpperCase()}</div>
+                )}
+                <p className="text-lg font-semibold">{active.contactName}</p>
+                {active.phone && (
+                  <a href={`https://wa.me/${active.phone.replace(/\D/g, "")}`} target="_blank" rel="noreferrer" className="text-sm text-brand-500 hover:underline">
+                    {active.phone}
+                  </a>
+                )}
+              </div>
+
+              <div className="space-y-2 text-sm">
+                <InfoRow label="Número (caixa)" value={active.connectionLabel || "—"} />
+                <InfoRow label="Status no pipeline" value={columns.find((c) => c.id === active.pipelineColumnId)?.name || "—"} />
+                <InfoRow label="Atendente" value={active.assignedTo || "Sem atendente"} />
+                <InfoRow label="Entrou em" value={active.subscribedAt ? formatDateTime(active.subscribedAt) : "—"} />
+                <InfoRow label="Automação" value={active.botPaused ? "Pausada" : "Ativa"} />
+              </div>
+
+              {active.tagIds && active.tagIds.length > 0 && (
+                <div>
+                  <p className="mb-1 text-xs font-medium text-ink-soft">Etiquetas</p>
+                  <div className="flex flex-wrap gap-1">
+                    {active.tagIds.map((t) => <span key={t} className="pill bg-gray-100 text-gray-600">{t}</span>)}
+                  </div>
+                </div>
+              )}
+
+              {/* Enviar fluxo manualmente */}
+              <div className="rounded-2xl border border-gray-100 p-4">
+                <p className="mb-2 flex items-center gap-2 text-sm font-semibold"><Workflow className="h-4 w-4 text-brand-500" /> Enviar fluxo manualmente</p>
+                <p className="mb-3 text-xs text-ink-faint">Dispara um fluxo agora para este contato (útil quando não disparou sozinho).</p>
+                <div className="space-y-2">
+                  {flows.filter((f) => f.status === "published").map((f) => (
+                    <button key={f.id} onClick={() => runFlowManual(f.id)} className="flex w-full items-center justify-between rounded-xl border border-gray-200 px-3 py-2 text-left text-sm transition hover:bg-brand-50 hover:border-brand-300">
+                      {f.name}
+                      <Send className="h-4 w-4 text-brand-500" />
+                    </button>
+                  ))}
+                  {flows.filter((f) => f.status === "published").length === 0 && (
+                    <p className="text-xs text-ink-faint">Nenhum fluxo publicado. Publique um fluxo em "Fluxos de conversa".</p>
+                  )}
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+      )}
+    </div>
+  );
+}
+
+function InfoRow({ label, value }: { label: string; value: string }) {
+  return (
+    <div className="flex items-center justify-between gap-2">
+      <span className="text-ink-faint">{label}</span>
+      <span className="truncate font-medium">{value}</span>
     </div>
   );
 }
