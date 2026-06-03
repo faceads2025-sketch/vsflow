@@ -1,10 +1,18 @@
 "use client";
 
-import { useState } from "react";
+import { Suspense, useState } from "react";
 import { useRouter, useSearchParams } from "next/navigation";
 import { MessageSquare, Lock } from "lucide-react";
 
 export default function LoginPage() {
+  return (
+    <Suspense fallback={<div className="grid min-h-screen place-items-center text-ink-faint">Carregando...</div>}>
+      <LoginForm />
+    </Suspense>
+  );
+}
+
+function LoginForm() {
   const [password, setPassword] = useState("");
   const [error, setError] = useState("");
   const [loading, setLoading] = useState(false);
