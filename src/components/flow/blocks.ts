@@ -40,6 +40,7 @@ export interface MenuItem {
 
 export const MENU_ITEMS: MenuItem[] = [
   { type: "message", label: "Conteúdo", icon: "Star", color: "#EF4444" },
+  { type: "question", label: "Pergunta", icon: "HelpCircle", color: "#F59E0B" },
   { type: "buttons", label: "Menu", icon: "LayoutGrid", color: "#9A7BFF" },
   { type: "tag", label: "Ação", icon: "Zap", color: "#F59E0B" },
   { type: "condition", label: "Condição", icon: "Filter", color: "#3FC8E4" },
