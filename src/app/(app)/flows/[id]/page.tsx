@@ -32,6 +32,12 @@ export default function FlowBuilder() {
   const [saving, setSaving] = useState(false);
   const [runLog, setRunLog] = useState<string[] | null>(null);
   const [menuOpen, setMenuOpen] = useState(false);
+  const [toast, setToast] = useState<string | null>(null);
+
+  function showToast(msg: string) {
+    setToast(msg);
+    setTimeout(() => setToast(null), 2500);
+  }
 
   useEffect(() => {
     fetch(`/api/flows/${id}`).then((r) => r.json()).then((flow) => {
@@ -94,6 +100,7 @@ export default function FlowBuilder() {
     });
     setStatus(newStatus);
     setSaving(false);
+    showToast(publish ? "Fluxo publicado! ✅" : "Fluxo salvo! ✅");
   }
 
   async function testRun() {
@@ -104,6 +111,13 @@ export default function FlowBuilder() {
 
   return (
     <div className="flex h-full flex-col">
+      {/* toast de confirmação */}
+      {toast && (
+        <div className="fixed left-1/2 top-4 z-50 -translate-x-1/2 rounded-full bg-gray-900 px-5 py-2.5 text-sm font-medium text-white shadow-soft">
+          {toast}
+        </div>
+      )}
+
       {/* topbar */}
       <div className="flex items-center gap-2 border-b border-gray-100 bg-white px-3 py-2 sm:gap-3 sm:px-5 sm:py-3">
         <button onClick={() => router.push("/flows")} className="shrink-0 text-ink-soft hover:text-ink"><ArrowLeft className="h-5 w-5" /></button>
