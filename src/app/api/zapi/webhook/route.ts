@@ -1,6 +1,6 @@
 import { NextRequest, NextResponse } from "next/server";
-import { db, uid, upsertConversation } from "@/lib/mock-data";
-import { runFlow } from "@/lib/flow-engine";
+import { uid, upsertConversation } from "@/lib/mock-data";
+import { handleInboundForFlow } from "@/lib/flow-engine";
 
 // Webhook de mensagens recebidas do Z-API ("On message received").
 // Configure no painel do Z-API apontando para: https://SEU_APP/api/zapi/webhook
@@ -47,27 +47,10 @@ export async function POST(req: NextRequest) {
   conv.lastMessageAt = new Date().toISOString();
   conv.preview = preview;
 
-  if (conv.botPaused) return NextResponse.json({ status: "received", automation: "paused" });
+  const isFirstMessage = conv.messages.length === 1;
+  const result = await handleInboundForFlow(conv, contact, text, isFirstMessage);
 
-  // automação por palavra-chave
-  const lower = (text || "").toLowerCase();
-  const kw = db.keywords.find((k) => {
-    if (!lower) return false;
-    if (k.matchType === "exact") return lower === k.word.toLowerCase();
-    if (k.matchType === "starts") return lower.startsWith(k.word.toLowerCase());
-    return lower.includes(k.word.toLowerCase());
-  });
-
-  let run = null;
-  if (kw?.flowId) {
-    const flow = db.flows.find((f) => f.id === kw.flowId);
-    if (flow) {
-      flow.executions += 1;
-      run = await runFlow(flow, { phone: contact.phone, name: contact.name });
-    }
-  }
-
-  return NextResponse.json({ status: "received", matchedKeyword: kw?.word ?? null, flowRun: run });
+  return NextResponse.json({ status: "received", ...result });
 }
 
 export const dynamic = "force-dynamic";

@@ -98,6 +98,8 @@ export interface Conversation {
   unread: number;
   preview: string;
   messages: Message[];
+  // estado do fluxo em execução para este contato (avança conforme as respostas)
+  flowState?: { flowId: string; nodeId: string; vars?: Record<string, string> };
 }
 
 export interface Keyword {
