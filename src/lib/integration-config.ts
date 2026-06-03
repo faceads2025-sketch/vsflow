@@ -1,6 +1,5 @@
-// Configuração de integração do WhatsApp, editável pela interface e persistida em disco.
-// No Railway, aponte DATA_DIR para o volume (ex: /data) p/ não perder ao redeployar.
-// Env (WHATSAPP_MODE, ZAPI_*) servem de valor inicial/fallback.
+// Configuração de integração do WhatsApp (multi-número), editável pela interface e
+// persistida em disco. No Railway, aponte DATA_DIR para o volume (ex: /data).
 
 import { readFileSync, writeFileSync, mkdirSync, existsSync } from "fs";
 import path from "path";
@@ -10,31 +9,51 @@ const FILE = path.join(DATA_DIR, "integration.json");
 
 export type WhatsAppMode = "mock" | "zapi" | "web" | "cloud";
 
+export interface Connection {
+  id: string;
+  label: string;
+  instanceId: string;
+  token: string;
+}
+
 export interface IntegrationConfig {
   mode: WhatsAppMode;
-  zapiInstanceId: string;
-  zapiToken: string;
-  zapiClientToken: string;
+  zapiClientToken: string; // token de segurança da CONTA (compartilhado entre instâncias)
+  connections: Connection[];
 }
 
 const g = globalThis as unknown as { __cfConfig?: IntegrationConfig };
 
 function defaults(): IntegrationConfig {
+  const envInstance = process.env.ZAPI_INSTANCE_ID || "";
+  const envToken = process.env.ZAPI_TOKEN || "";
   return {
     mode: ((process.env.WHATSAPP_MODE as WhatsAppMode) || "mock"),
-    zapiInstanceId: process.env.ZAPI_INSTANCE_ID || "",
-    zapiToken: process.env.ZAPI_TOKEN || "",
     zapiClientToken: process.env.ZAPI_CLIENT_TOKEN || "",
+    connections: envInstance && envToken ? [{ id: "conn1", label: "Número 1", instanceId: envInstance, token: envToken }] : [],
   };
+}
+
+// migra config antiga (campos únicos zapiInstanceId/zapiToken) -> connections[]
+function migrate(raw: any): IntegrationConfig {
+  const base = defaults();
+  const cfg: IntegrationConfig = {
+    mode: raw.mode || base.mode,
+    zapiClientToken: raw.zapiClientToken ?? base.zapiClientToken,
+    connections: Array.isArray(raw.connections) ? raw.connections : [],
+  };
+  if (cfg.connections.length === 0 && (raw.zapiInstanceId || raw.zapiToken)) {
+    cfg.connections = [{ id: "conn1", label: "Número 1", instanceId: raw.zapiInstanceId || "", token: raw.zapiToken || "" }];
+  }
+  if (cfg.connections.length === 0) cfg.connections = base.connections;
+  return cfg;
 }
 
 export function getConfig(): IntegrationConfig {
   if (g.__cfConfig) return g.__cfConfig;
   let cfg = defaults();
   try {
-    if (existsSync(FILE)) {
-      cfg = { ...defaults(), ...JSON.parse(readFileSync(FILE, "utf8")) };
-    }
+    if (existsSync(FILE)) cfg = migrate(JSON.parse(readFileSync(FILE, "utf8")));
   } catch (e) {
     console.error("[config] falha ao ler:", e);
   }
@@ -52,4 +71,10 @@ export function saveConfig(patch: Partial<IntegrationConfig>): IntegrationConfig
     console.error("[config] falha ao salvar:", e);
   }
   return next;
+}
+
+// retorna a conexão pelo id (ou a primeira como fallback)
+export function getConnection(id?: string): Connection | undefined {
+  const c = getConfig();
+  return c.connections.find((x) => x.id === id) || c.connections[0];
 }

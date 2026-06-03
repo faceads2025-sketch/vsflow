@@ -23,11 +23,14 @@ function mediaUrlOf(node: any): string | undefined {
 
 // Webhook de mensagens recebidas do Z-API ("Ao receber").
 export async function POST(req: NextRequest) {
+  const sp = new URL(req.url).searchParams;
   // proteção opcional: se WEBHOOK_SECRET estiver definido, exige ?key=SECRET
   const secret = process.env.WEBHOOK_SECRET;
-  if (secret && new URL(req.url).searchParams.get("key") !== secret) {
+  if (secret && sp.get("key") !== secret) {
     return NextResponse.json({ error: "unauthorized" }, { status: 401 });
   }
+  // qual número/conexão recebeu (configurado na URL do webhook do Z-API: ?inst=<id>)
+  const connectionId = sp.get("inst") || undefined;
 
   const p = await req.json().catch(() => ({}));
 
@@ -64,6 +67,9 @@ export async function POST(req: NextRequest) {
     timestamp: new Date().toISOString(),
     unreadInc: 1,
   });
+
+  // marca de qual número/conexão é esse contato (pra responder pelo número certo)
+  if (connectionId) contact.connectionId = connectionId;
 
   conv.messages.push({
     id: uid("msg"),

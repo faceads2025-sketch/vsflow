@@ -29,6 +29,8 @@ export interface Contact {
   // pipeline (Kanban de leads)
   pipelineColumnId?: string;
   pipelineOrder?: number;
+  // qual conexão/número do WhatsApp atende esse contato
+  connectionId?: string;
 }
 
 export interface PipelineColumn {

@@ -11,7 +11,7 @@ export async function POST(req: NextRequest, { params }: { params: { id: string 
   const contact = db.contacts.find((c) => c.id === conv.contactId);
   if (contact) {
     if (body.type === "text") {
-      await sendText({ to: contact.phone, body: body.content });
+      await sendText({ to: contact.phone, body: body.content, connectionId: contact.connectionId });
     } else if (body.mediaUrl) {
       await sendMedia({
         to: contact.phone,
@@ -19,6 +19,7 @@ export async function POST(req: NextRequest, { params }: { params: { id: string 
         url: body.mediaUrl,
         // legenda só quando o atendente digitou algo; nunca o nome do arquivo
         caption: body.caption || undefined,
+        connectionId: contact.connectionId,
       });
     }
   }

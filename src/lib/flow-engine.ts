@@ -46,13 +46,14 @@ async function emit(
 
   try {
     if (kind === "text") {
-      if (content) await sendText({ to: contact.phone, body: content });
+      if (content) await sendText({ to: contact.phone, body: content, connectionId: contact.connectionId });
     } else if (mediaUrl) {
       await sendMedia({
         to: contact.phone,
         type: kind === "file" ? "document" : (kind as any),
         url: mediaUrl,
         caption: content || undefined,
+        connectionId: contact.connectionId,
       });
     }
   } catch (e) {

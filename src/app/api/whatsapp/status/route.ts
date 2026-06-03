@@ -1,49 +1,39 @@
 import { NextResponse } from "next/server";
 import { waStatus } from "@/lib/wa-client";
-import { zapiConfigured, zapiStatus, zapiQrCode, zapiPhone } from "@/lib/zapi";
+import { zapiStatus, zapiQrCode, zapiPhone } from "@/lib/zapi";
 import { getConfig } from "@/lib/integration-config";
 
 export const dynamic = "force-dynamic";
 
 export async function GET() {
-  const MODE = getConfig().mode;
+  const cfg = getConfig();
+  const MODE = cfg.mode;
+
   if (MODE === "zapi") {
-    if (!zapiConfigured()) {
-      return NextResponse.json({ status: "offline", qr: null, phone: null, queue: null, provider: "zapi" });
-    }
-    try {
-      const st = await zapiStatus();
-      const connected = st?.connected === true || st?.smartphoneConnected === true;
-      let qr: string | null = null;
-      let phone: string | null = null;
-      if (connected) {
-        phone = await zapiPhone().catch(() => null);
-      } else {
-        qr = await zapiQrCode().catch(() => null);
-      }
-      return NextResponse.json({
-        status: connected ? "connected" : qr ? "qr" : "disconnected",
-        qr,
-        phone,
-        queue: null,
-        provider: "zapi",
-      });
-    } catch {
-      return NextResponse.json({ status: "offline", qr: null, phone: null, queue: null, provider: "zapi" });
-    }
+    const connections = await Promise.all(
+      cfg.connections.map(async (conn) => {
+        if (!conn.instanceId || !conn.token) {
+          return { id: conn.id, label: conn.label, status: "offline" as const, qr: null, phone: null };
+        }
+        try {
+          const st = await zapiStatus(conn.id);
+          const connected = st?.connected === true || st?.smartphoneConnected === true;
+          let qr: string | null = null;
+          let phone: string | null = null;
+          if (connected) phone = await zapiPhone(conn.id).catch(() => null);
+          else qr = await zapiQrCode(conn.id).catch(() => null);
+          return { id: conn.id, label: conn.label, status: connected ? "connected" : qr ? "qr" : "disconnected", qr, phone };
+        } catch {
+          return { id: conn.id, label: conn.label, status: "offline" as const, qr: null, phone: null };
+        }
+      }),
+    );
+    return NextResponse.json({ provider: "zapi", connections });
   }
 
   if (MODE === "web") {
-    // Baileys gateway
     return NextResponse.json({ ...(await waStatus()), provider: "web" });
   }
 
-  // mock / cloud — sem QR
-  return NextResponse.json({
-    status: MODE === "cloud" ? "connected" : "disconnected",
-    qr: null,
-    phone: null,
-    queue: null,
-    provider: MODE,
-  });
+  return NextResponse.json({ status: MODE === "cloud" ? "connected" : "disconnected", qr: null, phone: null, queue: null, provider: MODE });
 }

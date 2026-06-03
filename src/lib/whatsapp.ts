@@ -23,6 +23,7 @@ function mockNow(mode: string) {
 interface SendTextArgs {
   to: string;
   body: string;
+  connectionId?: string;
 }
 
 interface SendTemplateArgs {
@@ -48,10 +49,10 @@ async function graph(path: string, payload: any) {
   return res.json();
 }
 
-export async function sendText({ to, body }: SendTextArgs) {
+export async function sendText({ to, body, connectionId }: SendTextArgs) {
   const MODE = getMode();
   if (MODE === "zapi") {
-    return zapiSendText(to, body);
+    return zapiSendText(to, body, connectionId);
   }
   if (MODE === "web") {
     return waSend({ to, type: "text", text: body });
@@ -93,7 +94,7 @@ export async function sendTemplate({ to, template, language = "pt_BR", component
   });
 }
 
-export async function sendMedia({ to, type, url, caption }: { to: string; type: "image" | "video" | "audio" | "document"; url: string; caption?: string }) {
+export async function sendMedia({ to, type, url, caption, connectionId }: { to: string; type: "image" | "video" | "audio" | "document"; url: string; caption?: string; connectionId?: string }) {
   // resolve URLs relativas para absolutas usando a URL pública (Z-API precisa baixar o arquivo)
   const publicUrl =
     process.env.APP_URL ||
@@ -106,7 +107,7 @@ export async function sendMedia({ to, type, url, caption }: { to: string; type: 
   const MODE = getMode();
 
   if (MODE === "zapi") {
-    return zapiSendMedia({ phone: to, type, url: absUrl, caption });
+    return zapiSendMedia({ phone: to, type, url: absUrl, caption, connId: connectionId });
   }
   if (MODE === "web") {
     return waSend({ to, type, url: absUrl, caption });
