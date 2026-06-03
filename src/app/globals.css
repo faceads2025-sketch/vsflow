@@ -1,0 +1,50 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+:root {
+  --bg: #f7f9fb;
+}
+
+html,
+body {
+  height: 100%;
+}
+
+body {
+  background: var(--bg);
+  color: #2b2f3a;
+  -webkit-font-smoothing: antialiased;
+}
+
+@layer components {
+  .card {
+    @apply bg-white rounded-2xl shadow-card border border-gray-100;
+  }
+  .btn-primary {
+    @apply inline-flex items-center gap-2 rounded-full bg-brand-400 px-5 py-2.5 text-sm font-semibold text-white shadow-sm transition hover:bg-brand-500 disabled:opacity-50;
+  }
+  .btn-green {
+    @apply inline-flex items-center gap-2 rounded-full bg-accent-green px-5 py-2.5 text-sm font-semibold text-emerald-900 shadow-sm transition hover:brightness-95;
+  }
+  .btn-ghost {
+    @apply inline-flex items-center gap-2 rounded-full border border-gray-200 bg-white px-5 py-2.5 text-sm font-medium text-ink-soft transition hover:bg-gray-50;
+  }
+  .input {
+    @apply w-full rounded-xl border border-gray-200 bg-white px-4 py-2.5 text-sm outline-none transition focus:border-brand-400 focus:ring-2 focus:ring-brand-100;
+  }
+  .pill {
+    @apply inline-flex items-center gap-1 rounded-full px-2.5 py-1 text-xs font-medium;
+  }
+  .nav-item {
+    @apply flex items-center gap-3 rounded-xl px-3 py-2.5 text-sm font-medium text-ink-soft transition hover:bg-gray-50;
+  }
+  .nav-item-active {
+    @apply bg-brand-50 text-brand-600;
+  }
+}
+
+/* reactflow overrides */
+.react-flow__node {
+  font-family: inherit;
+}

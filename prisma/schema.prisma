@@ -1,0 +1,327 @@
+// ConversaFlow — schema Prisma (PostgreSQL)
+// Cobre: usuários, empresas, contas WhatsApp, contatos, conversas, mensagens,
+// campanhas, fluxos (nodes/edges), automações, palavras-chave, etiquetas,
+// transmissões, templates e equipe.
+
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+// ---------------------------------------------------------------------------
+// Empresa / Workspace
+// ---------------------------------------------------------------------------
+model Company {
+  id        String   @id @default(cuid())
+  name      String
+  plan      String   @default("starter")
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  users            User[]
+  whatsappAccounts WhatsappAccount[]
+  contacts         Contact[]
+  conversations    Conversation[]
+  campaigns        Campaign[]
+  flows            Flow[]
+  automations      Automation[]
+  keywords         Keyword[]
+  tags             Tag[]
+  broadcasts       Broadcast[]
+  templates        Template[]
+  teamMembers      TeamMember[]
+  customFields     CustomField[]
+  quickReplies     QuickReply[]
+  businessHours    BusinessHours[]
+}
+
+// ---------------------------------------------------------------------------
+// Usuários e equipe
+// ---------------------------------------------------------------------------
+model User {
+  id           String   @id @default(cuid())
+  email        String   @unique
+  passwordHash String
+  name         String
+  role         String   @default("owner") // owner | admin | agent
+  createdAt    DateTime @default(now())
+
+  companyId String
+  company   Company @relation(fields: [companyId], references: [id], onDelete: Cascade)
+
+  teamMember TeamMember?
+}
+
+model TeamMember {
+  id        String   @id @default(cuid())
+  name      String
+  email     String
+  role      String   @default("agent") // admin | agent
+  status    String   @default("active") // active | invited | disabled
+  createdAt DateTime @default(now())
+
+  companyId String
+  company   Company @relation(fields: [companyId], references: [id], onDelete: Cascade)
+
+  userId String? @unique
+  user   User?   @relation(fields: [userId], references: [id])
+}
+
+// ---------------------------------------------------------------------------
+// WhatsApp Cloud API
+// ---------------------------------------------------------------------------
+model WhatsappAccount {
+  id                String   @id @default(cuid())
+  phoneNumber       String
+  phoneNumberId     String? // WhatsApp Cloud API phone_number_id
+  wabaId            String? // WhatsApp Business Account ID
+  displayName       String?
+  status            String   @default("connected") // connected | disconnected
+  automationEnabled Boolean  @default(true)
+  createdAt         DateTime @default(now())
+
+  companyId String
+  company   Company @relation(fields: [companyId], references: [id], onDelete: Cascade)
+}
+
+// ---------------------------------------------------------------------------
+// Contatos
+// ---------------------------------------------------------------------------
+model Contact {
+  id           String   @id @default(cuid())
+  name         String
+  phone        String
+  email        String?
+  fieldValues  Json?    // valores de campos personalizados
+  subscribedAt DateTime @default(now())
+
+  companyId  String
+  company    Company  @relation(fields: [companyId], references: [id], onDelete: Cascade)
+  campaignId String?
+  campaign   Campaign? @relation(fields: [campaignId], references: [id])
+
+  tags          ContactTag[]
+  conversations Conversation[]
+
+  @@unique([companyId, phone])
+}
+
+model Tag {
+  id    String @id @default(cuid())
+  name  String
+  color String @default("#3FC8E4")
+
+  companyId String
+  company   Company @relation(fields: [companyId], references: [id], onDelete: Cascade)
+
+  contacts ContactTag[]
+}
+
+model ContactTag {
+  contactId String
+  tagId     String
+  contact   Contact @relation(fields: [contactId], references: [id], onDelete: Cascade)
+  tag       Tag     @relation(fields: [tagId], references: [id], onDelete: Cascade)
+
+  @@id([contactId, tagId])
+}
+
+model CustomField {
+  id    String @id @default(cuid())
+  name  String
+  key   String
+  type  String @default("text") // text | number | date | boolean
+
+  companyId String
+  company   Company @relation(fields: [companyId], references: [id], onDelete: Cascade)
+}
+
+model QuickReply {
+  id        String @id @default(cuid())
+  shortcut  String
+  content   String
+
+  companyId String
+  company   Company @relation(fields: [companyId], references: [id], onDelete: Cascade)
+}
+
+model BusinessHours {
+  id        String @id @default(cuid())
+  weekday   Int    // 0=domingo .. 6=sábado
+  open      String // "09:00"
+  close     String // "18:00"
+  enabled   Boolean @default(true)
+
+  companyId String
+  company   Company @relation(fields: [companyId], references: [id], onDelete: Cascade)
+}
+
+// ---------------------------------------------------------------------------
+// Conversas e mensagens
+// ---------------------------------------------------------------------------
+model Conversation {
+  id            String   @id @default(cuid())
+  status        String   @default("open") // open | closed
+  botPaused     Boolean  @default(false)  // atendente assumiu?
+  assignedTo    String?
+  lastMessageAt DateTime @default(now())
+  createdAt     DateTime @default(now())
+
+  companyId String
+  company   Company @relation(fields: [companyId], references: [id], onDelete: Cascade)
+  contactId String
+  contact   Contact @relation(fields: [contactId], references: [id], onDelete: Cascade)
+
+  messages Message[]
+}
+
+model Message {
+  id          String   @id @default(cuid())
+  direction   String   // inbound | outbound
+  type        String   @default("text") // text | image | audio | video | file | template
+  content     String
+  mediaUrl    String?
+  status      String   @default("sent") // sent | delivered | read | failed
+  fromBot     Boolean  @default(false)
+  createdAt   DateTime @default(now())
+
+  conversationId String
+  conversation   Conversation @relation(fields: [conversationId], references: [id], onDelete: Cascade)
+}
+
+// ---------------------------------------------------------------------------
+// Campanhas
+// ---------------------------------------------------------------------------
+model Campaign {
+  id          String   @id @default(cuid())
+  name        String
+  slug        String   @unique // usado no link de entrada
+  description String?
+  active      Boolean  @default(true)
+  createdAt   DateTime @default(now())
+
+  companyId String
+  company   Company @relation(fields: [companyId], references: [id], onDelete: Cascade)
+
+  // fluxo iniciado automaticamente quando o lead entra
+  flowId String?
+  flow   Flow?   @relation(fields: [flowId], references: [id])
+
+  contacts Contact[]
+}
+
+// ---------------------------------------------------------------------------
+// Fluxos de conversa (construtor visual)
+// ---------------------------------------------------------------------------
+model Flow {
+  id          String   @id @default(cuid())
+  name        String
+  description String?
+  isDefault   Boolean  @default(false)
+  status      String   @default("draft") // draft | published
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+
+  companyId String
+  company   Company @relation(fields: [companyId], references: [id], onDelete: Cascade)
+
+  nodes      FlowNode[]
+  edges      FlowEdge[]
+  campaigns  Campaign[]
+  automations Automation[]
+}
+
+model FlowNode {
+  id     String @id @default(cuid())
+  type   String // message | image | video | audio | question | buttons | condition | delay | transfer | tag | goto | webhook | end
+  // posição no canvas
+  posX   Float  @default(0)
+  posY   Float  @default(0)
+  data   Json   // conteúdo específico do bloco
+
+  flowId String
+  flow   Flow   @relation(fields: [flowId], references: [id], onDelete: Cascade)
+}
+
+model FlowEdge {
+  id           String  @id @default(cuid())
+  source       String  // FlowNode.id
+  target       String  // FlowNode.id
+  sourceHandle String? // saída do bloco (ex: botão / sim-não)
+  label        String?
+
+  flowId String
+  flow   Flow   @relation(fields: [flowId], references: [id], onDelete: Cascade)
+}
+
+// ---------------------------------------------------------------------------
+// Automação: palavras-chave, sequências, webhooks
+// ---------------------------------------------------------------------------
+model Automation {
+  id        String   @id @default(cuid())
+  name      String
+  type      String   // keyword | sequence | webhook
+  active    Boolean  @default(true)
+  config    Json     // payload específico (delays, url, etc)
+  createdAt DateTime @default(now())
+
+  companyId String
+  company   Company @relation(fields: [companyId], references: [id], onDelete: Cascade)
+
+  flowId String?
+  flow   Flow?   @relation(fields: [flowId], references: [id])
+}
+
+model Keyword {
+  id        String   @id @default(cuid())
+  word      String
+  matchType String   @default("contains") // exact | contains | starts
+  flowId    String?
+  createdAt DateTime @default(now())
+
+  companyId String
+  company   Company @relation(fields: [companyId], references: [id], onDelete: Cascade)
+}
+
+// ---------------------------------------------------------------------------
+// Transmissões (broadcast)
+// ---------------------------------------------------------------------------
+model Broadcast {
+  id          String    @id @default(cuid())
+  name        String
+  status      String    @default("draft") // draft | scheduled | sending | sent | failed
+  messageType String    @default("text")  // text | template
+  content     String
+  templateId  String?
+  audience    Json?     // filtros de público
+  scheduledAt DateTime?
+  sentAt      DateTime?
+  recipients  Int       @default(0)
+  delivered   Int       @default(0)
+  createdAt   DateTime  @default(now())
+
+  companyId String
+  company   Company @relation(fields: [companyId], references: [id], onDelete: Cascade)
+}
+
+// ---------------------------------------------------------------------------
+// Modelos (templates aprovados WhatsApp)
+// ---------------------------------------------------------------------------
+model Template {
+  id        String   @id @default(cuid())
+  name      String
+  category  String   @default("MARKETING") // MARKETING | UTILITY | AUTHENTICATION
+  language  String   @default("pt_BR")
+  status    String   @default("PENDING")   // APPROVED | PENDING | REJECTED
+  body      String
+  header    String?
+  footer    String?
+  createdAt DateTime @default(now())
+
+  companyId String
+  company   Company @relation(fields: [companyId], references: [id], onDelete: Cascade)
+}
