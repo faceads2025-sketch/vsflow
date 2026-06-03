@@ -1,9 +1,11 @@
-// Camada de envio de mensagens. Três modos (env WHATSAPP_MODE):
+// Camada de envio de mensagens. Modos (env WHATSAPP_MODE):
+//   - "zapi"  -> Z-API (WhatsApp gerenciado na nuvem; recomendado)
 //   - "web"   -> WhatsApp Web não-oficial (Baileys) via gateway local
 //   - "cloud" -> WhatsApp Cloud API oficial (Graph API)
 //   - "mock"  -> apenas loga no console (default p/ desenvolvimento)
 
 import { waSend } from "./wa-client";
+import { zapiSendText, zapiSendMedia } from "./zapi";
 
 const MODE = (process.env.WHATSAPP_MODE || "mock").toLowerCase();
 
@@ -42,6 +44,9 @@ async function graph(path: string, payload: any) {
 }
 
 export async function sendText({ to, body }: SendTextArgs) {
+  if (MODE === "zapi") {
+    return zapiSendText(to, body);
+  }
   if (MODE === "web") {
     return waSend({ to, type: "text", text: body });
   }
@@ -58,6 +63,9 @@ export async function sendText({ to, body }: SendTextArgs) {
 }
 
 export async function sendTemplate({ to, template, language = "pt_BR", components }: SendTemplateArgs) {
+  if (MODE === "zapi") {
+    return zapiSendText(to, `[${template}]`); // Z-API não usa templates aprovados
+  }
   if (MODE === "web") {
     // WhatsApp Web não usa templates aprovados; envia como texto simples.
     return waSend({ to, type: "text", text: `[${template}]` });
@@ -82,6 +90,9 @@ export async function sendMedia({ to, type, url, caption }: { to: string; type: 
   // resolve URLs relativas (uploads locais) para absolutas
   const absUrl = url.startsWith("http") ? url : `${process.env.APP_URL || "http://localhost:3000"}${url}`;
 
+  if (MODE === "zapi") {
+    return zapiSendMedia({ phone: to, type, url: absUrl, caption });
+  }
   if (MODE === "web") {
     return waSend({ to, type, url: absUrl, caption });
   }

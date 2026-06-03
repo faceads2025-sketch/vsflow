@@ -7,6 +7,7 @@ interface Status {
   status: "offline" | "disconnected" | "connecting" | "qr" | "connected";
   qr: string | null;
   phone: string | null;
+  provider?: string;
   queue: { sentThisHour: number; sentToday: number; hourlyLimit: number; dailyLimit: number; pending: number } | null;
 }
 
@@ -47,12 +48,16 @@ export default function WhatsAppConnect() {
       <div className="card p-6">
         <div className="mb-4 flex items-center gap-2">
           <Smartphone className="h-5 w-5 text-brand-500" />
-          <h3 className="font-semibold">Conexão via WhatsApp Web</h3>
+          <h3 className="font-semibold">Conexão {st?.provider === "zapi" ? "via Z-API" : "via WhatsApp Web"}</h3>
         </div>
 
         {status === "offline" && (
           <div className="rounded-xl bg-amber-50 p-4 text-sm text-amber-700">
-            Gateway WhatsApp Web offline. Em um terminal, rode <code className="rounded bg-amber-100 px-1">npm run wa</code> e recarregue.
+            {st?.provider === "zapi" ? (
+              <>Z-API não configurado. Defina <code className="rounded bg-amber-100 px-1">ZAPI_INSTANCE_ID</code>, <code className="rounded bg-amber-100 px-1">ZAPI_TOKEN</code> e <code className="rounded bg-amber-100 px-1">ZAPI_CLIENT_TOKEN</code> e recarregue.</>
+            ) : (
+              <>Gateway WhatsApp Web offline. Em um terminal, rode <code className="rounded bg-amber-100 px-1">npm run wa</code> e recarregue.</>
+            )}
           </div>
         )}
 

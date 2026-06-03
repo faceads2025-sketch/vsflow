@@ -89,6 +89,33 @@ npx tsx src/lib/worker.ts
 
 ---
 
+## ⭐ Z-API (recomendado — WhatsApp gerenciado na nuvem)
+
+O [Z-API](https://z-api.io) cuida da conexão do WhatsApp **nos servidores deles** — sem
+gateway local, sem ffmpeg, áudio já vai como nota de voz, e muito mais estável que o
+Baileys self-hosted.
+
+### Configuração
+1. Crie uma conta e uma **instância** em https://app.z-api.io
+2. Pegue: **Instance ID**, **Token** (da instância) e o **Client-Token** (em Segurança da conta)
+3. No `.env` (ou nas Variables do Railway):
+   ```
+   WHATSAPP_MODE=zapi
+   ZAPI_INSTANCE_ID=xxxxxxxx
+   ZAPI_TOKEN=xxxxxxxx
+   ZAPI_CLIENT_TOKEN=xxxxxxxx
+   ```
+4. No painel do Z-API, configure o **webhook "Ao receber"** apontando para:
+   `https://SEU_APP/api/zapi/webhook`
+5. Abra o app → **Configurações → Conexão** → escaneie o QR (vem do Z-API).
+
+Pronto: enviar/receber texto, **áudio (nota de voz), imagem, vídeo e documento**, campanhas,
+fluxos e automação por palavra-chave funcionam por cima do Z-API. Não precisa rodar `npm run wa`.
+
+> Mídia enviada usa a URL pública do arquivo (`APP_URL` deve ser a URL pública do app, ex: domínio do Railway).
+
+---
+
 ## 🟢 Conexão via WhatsApp Web (não-oficial, QR Code)
 
 Conecta um número escaneando o QR (como o BotConversa nas conexões não-oficiais),
