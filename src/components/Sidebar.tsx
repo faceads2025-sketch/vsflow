@@ -18,6 +18,8 @@ import {
   PanelLeftClose,
   PanelLeftOpen,
   LogOut,
+  Sun,
+  Moon,
 } from "lucide-react";
 import { cn } from "@/lib/utils";
 
@@ -38,6 +40,18 @@ const items = [
 export default function Sidebar({ onNavigate }: { onNavigate?: () => void }) {
   const pathname = usePathname();
   const [collapsed, setCollapsed] = useState(false);
+  const [dark, setDark] = useState(false);
+
+  useEffect(() => {
+    setDark(document.documentElement.classList.contains("dark"));
+  }, []);
+
+  function toggleTheme() {
+    const next = !document.documentElement.classList.contains("dark");
+    document.documentElement.classList.toggle("dark", next);
+    localStorage.setItem("cf-theme", next ? "dark" : "light");
+    setDark(next);
+  }
 
   // lembra a preferência entre navegações
   useEffect(() => {
@@ -115,6 +129,9 @@ export default function Sidebar({ onNavigate }: { onNavigate?: () => void }) {
             <p className="text-ink-faint">ID 207554</p>
           </div>
         )}
+        <button onClick={toggleTheme} title={dark ? "Modo claro" : "Modo escuro"} className="shrink-0 text-ink-faint transition hover:text-ink">
+          {dark ? <Sun className="h-[18px] w-[18px]" /> : <Moon className="h-[18px] w-[18px]" />}
+        </button>
         <button onClick={logout} title="Sair" className="shrink-0 text-ink-faint transition hover:text-red-500">
           <LogOut className="h-[18px] w-[18px]" />
         </button>
