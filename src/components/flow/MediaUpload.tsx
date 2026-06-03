@@ -6,7 +6,8 @@ import { Upload, Loader2, Link2 } from "lucide-react";
 const ACCEPT: Record<string, string> = {
   image: "image/*",
   video: "video/*",
-  audio: "audio/*",
+  // inclui extensões explícitas: alguns SOs não mapeiam .opus/.ogg como audio/*
+  audio: "audio/*,.opus,.ogg,.oga,.mp3,.m4a,.aac,.wav,.amr,.webm",
   file: "*/*",
 };
 
