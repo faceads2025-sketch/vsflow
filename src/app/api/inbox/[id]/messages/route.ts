@@ -17,7 +17,8 @@ export async function POST(req: NextRequest, { params }: { params: { id: string 
         to: contact.phone,
         type: body.type === "file" ? "document" : body.type,
         url: body.mediaUrl,
-        caption: body.content,
+        // legenda só quando o atendente digitou algo; nunca o nome do arquivo
+        caption: body.caption || undefined,
       });
     }
   }
