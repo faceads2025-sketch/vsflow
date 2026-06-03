@@ -16,10 +16,20 @@ export interface Connection {
   token: string;
 }
 
+export interface ShopeeConfig {
+  partnerId: string;
+  partnerKey: string;
+  shopId: string;
+  accessToken: string;
+  refreshToken: string;
+  expireAt: number; // epoch ms de expiração do access_token
+}
+
 export interface IntegrationConfig {
   mode: WhatsAppMode;
   zapiClientToken: string; // token de segurança da CONTA (compartilhado entre instâncias)
   connections: Connection[];
+  shopee?: ShopeeConfig;
 }
 
 const g = globalThis as unknown as { __cfConfig?: IntegrationConfig };
@@ -41,6 +51,7 @@ function migrate(raw: any): IntegrationConfig {
     mode: raw.mode || base.mode,
     zapiClientToken: raw.zapiClientToken ?? base.zapiClientToken,
     connections: Array.isArray(raw.connections) ? raw.connections : [],
+    shopee: raw.shopee,
   };
   if (cfg.connections.length === 0 && (raw.zapiInstanceId || raw.zapiToken)) {
     cfg.connections = [{ id: "conn1", label: "Número 1", instanceId: raw.zapiInstanceId || "", token: raw.zapiToken || "" }];
