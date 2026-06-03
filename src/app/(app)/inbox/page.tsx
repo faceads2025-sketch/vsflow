@@ -1,7 +1,7 @@
 "use client";
 
 import { useEffect, useRef, useState } from "react";
-import { Send, Paperclip, Image as ImageIcon, Mic, Bot, BotOff, Search, RefreshCw, Trash2, ArrowLeft } from "lucide-react";
+import { Send, Paperclip, Image as ImageIcon, Mic, Bot, BotOff, Search, RefreshCw, Trash2, ArrowLeft, ChevronDown, Check } from "lucide-react";
 import { formatTime } from "@/lib/utils";
 import type { Conversation, PipelineColumn } from "@/lib/types";
 
@@ -241,16 +241,7 @@ export default function InboxPage() {
             </div>
             <div className="flex shrink-0 items-center gap-2">
               {/* status do pipeline (move o card no Kanban) */}
-              <select
-                value={active.pipelineColumnId || ""}
-                onChange={(e) => setStatus(e.target.value)}
-                title="Status no Pipeline"
-                className="max-w-[150px] rounded-full border border-gray-200 bg-white px-3 py-2 text-xs font-medium outline-none focus:border-brand-400"
-                style={{ color: columns.find((c) => c.id === active.pipelineColumnId)?.color }}
-              >
-                <option value="">Status...</option>
-                {columns.map((c) => <option key={c.id} value={c.id}>{c.name}</option>)}
-              </select>
+              <StatusSelect columns={columns} value={active.pipelineColumnId} onChange={setStatus} />
               <button onClick={toggleBot}
                 className={`flex items-center gap-2 rounded-full px-3 py-2 text-sm font-medium ${active.botPaused ? "bg-emerald-100 text-emerald-700" : "bg-amber-100 text-amber-700"}`}>
                 {active.botPaused ? <Bot className="h-4 w-4" /> : <BotOff className="h-4 w-4" />}
@@ -319,6 +310,55 @@ export default function InboxPage() {
         </div>
       ) : (
         <div className="hidden flex-1 place-items-center px-6 text-center text-ink-faint lg:grid">Nenhum chat selecionado, por favor selecione um dos chats</div>
+      )}
+    </div>
+  );
+}
+
+// Seletor de status do Pipeline (pílula colorida + dropdown). Ao escolher, move o card no Kanban.
+function StatusSelect({
+  columns,
+  value,
+  onChange,
+}: {
+  columns: PipelineColumn[];
+  value?: string;
+  onChange: (id: string) => void;
+}) {
+  const [open, setOpen] = useState(false);
+  const current = columns.find((c) => c.id === value);
+  const color = current?.color || "#9CA3AF";
+
+  return (
+    <div className="relative">
+      <button
+        onClick={() => setOpen((v) => !v)}
+        title="Status no Pipeline"
+        className="flex items-center gap-2 rounded-full border px-3 py-2 text-xs font-semibold transition"
+        style={{ borderColor: color + "55", background: current ? color + "14" : "#fff", color: current ? color : "#6B7280" }}
+      >
+        <span className="h-2.5 w-2.5 shrink-0 rounded-full" style={{ background: color }} />
+        <span className="max-w-[110px] truncate">{current?.name || "Definir status"}</span>
+        <ChevronDown className="h-3.5 w-3.5 opacity-70" />
+      </button>
+      {open && (
+        <>
+          <div className="fixed inset-0 z-20" onClick={() => setOpen(false)} />
+          <div className="absolute right-0 z-30 mt-1 max-h-72 w-56 overflow-y-auto rounded-2xl border border-gray-100 bg-white p-1 shadow-soft">
+            <p className="px-3 py-1.5 text-[10px] font-semibold uppercase tracking-wide text-ink-faint">Status do lead</p>
+            {columns.map((c) => (
+              <button
+                key={c.id}
+                onClick={() => { onChange(c.id); setOpen(false); }}
+                className="flex w-full items-center gap-2 rounded-xl px-3 py-2 text-left text-sm transition hover:bg-gray-50"
+              >
+                <span className="h-2.5 w-2.5 shrink-0 rounded-full" style={{ background: c.color }} />
+                <span className="flex-1 truncate">{c.name}</span>
+                {value === c.id && <Check className="h-4 w-4 text-brand-500" />}
+              </button>
+            ))}
+          </div>
+        </>
       )}
     </div>
   );
