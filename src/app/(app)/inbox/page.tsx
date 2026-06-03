@@ -100,20 +100,6 @@ export default function InboxPage() {
     setSyncing(false);
   }
 
-  async function clearDemo() {
-    if (!confirm("Remover as conversas de demonstração? (não afeta o WhatsApp)")) return;
-    await fetch("/api/whatsapp/clear-demo", { method: "POST" });
-    setActiveId(null);
-    await load();
-  }
-
-  async function mergeDuplicates() {
-    if (!confirm("Juntar conversas duplicadas da mesma pessoa? (mantém o histórico)")) return;
-    const r = await fetch("/api/inbox/merge-duplicates", { method: "POST" }).then((x) => x.json());
-    await load();
-    const total = (r.mergedContacts || 0) + (r.removedLid || 0);
-    alert(total ? `${r.mergedContacts || 0} duplicada(s) juntada(s), ${r.removedLid || 0} contato(s) @lid removido(s).` : "Nada para limpar.");
-  }
 
   async function load() {
     const [data, cols, fl] = await Promise.all([
@@ -224,14 +210,6 @@ export default function InboxPage() {
           <div className="mb-3 flex items-center justify-between">
             <h1 className="text-xl font-bold">Inbox</h1>
             <div className="flex items-center gap-1">
-              <button onClick={mergeDuplicates} title="Juntar conversas duplicadas da mesma pessoa"
-                className="rounded-lg px-2 py-1 text-xs font-medium text-ink-faint transition hover:bg-gray-100">
-                Mesclar
-              </button>
-              <button onClick={clearDemo} title="Remover conversas de demonstração"
-                className="rounded-lg px-2 py-1 text-xs font-medium text-ink-faint transition hover:bg-gray-100">
-                Limpar demo
-              </button>
               <button onClick={resync} disabled={syncing} title="Sincronizar conversas do WhatsApp"
                 className="flex items-center gap-1 rounded-lg px-2 py-1 text-xs font-medium text-brand-500 transition hover:bg-brand-50 disabled:opacity-50">
                 <RefreshCw className={`h-3.5 w-3.5 ${syncing ? "animate-spin" : ""}`} /> {syncing ? "Sincronizando..." : "Sincronizar"}

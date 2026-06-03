@@ -76,13 +76,8 @@ function seed() {
     },
   ];
 
-  const contacts: Contact[] = [
-    { id: "ct1", name: "Kennedy Lima", phone: "+55 27 99820-5955", tags: ["t2"], campaignId: "c1", subscribedAt: "2026-06-02T11:27:00Z", pipelineColumnId: "col_pagou", pipelineOrder: 0 },
-    { id: "ct2", name: "FV", phone: "+55 89 9436-9605", tags: ["t1"], campaignId: "c1", subscribedAt: "2026-06-02T11:14:00Z", pipelineColumnId: "col_novo", pipelineOrder: 0 },
-    { id: "ct3", name: "Regiana", phone: "+55 11 98477-1020", tags: ["t3"], subscribedAt: "2026-06-01T09:00:00Z", pipelineColumnId: "col_aguardando", pipelineOrder: 0 },
-    { id: "ct4", name: "Joana", phone: "+55 21 99111-2233", tags: ["t1", "t3"], subscribedAt: "2026-05-30T15:30:00Z", pipelineColumnId: "col_duvida", pipelineOrder: 0 },
-    { id: "ct5", name: "Luana", phone: "+55 31 98888-7766", tags: ["t2"], subscribedAt: "2026-05-29T18:10:00Z", pipelineColumnId: "col_novo", pipelineOrder: 1 },
-  ];
+  // sem contatos de demonstração — começa limpo (os reais vêm do WhatsApp)
+  const contacts: Contact[] = [];
 
   const flows: Flow[] = [
     {
@@ -135,51 +130,8 @@ function seed() {
     },
   ];
 
-  const conversations: Conversation[] = [
-    {
-      id: "cv1",
-      contactId: "ct1",
-      contactName: "Kennedy Lima",
-      status: "open",
-      botPaused: false,
-      lastMessageAt: "2026-06-02T18:40:00Z",
-      unread: 2,
-      preview: "Quero saber mais sobre a oferta",
-      messages: [
-        { id: "msg1", direction: "inbound", type: "text", content: "Oi, vi o anúncio", status: "read", fromBot: false, createdAt: "2026-06-02T18:30:00Z" },
-        { id: "msg2", direction: "outbound", type: "text", content: "Olá! 👋 Bem-vindo ao funil. Você está pronto pra mudar de vida?", status: "delivered", fromBot: true, createdAt: "2026-06-02T18:31:00Z" },
-        { id: "msg3", direction: "inbound", type: "text", content: "Quero saber mais sobre a oferta", status: "read", fromBot: false, createdAt: "2026-06-02T18:40:00Z" },
-      ],
-    },
-    {
-      id: "cv2",
-      contactId: "ct3",
-      contactName: "Regiana",
-      status: "open",
-      botPaused: true,
-      assignedTo: "Kennedy",
-      lastMessageAt: "2026-06-02T17:10:00Z",
-      unread: 0,
-      preview: "Já fiz o pix, e agora?",
-      messages: [
-        { id: "msg4", direction: "inbound", type: "text", content: "Já fiz o pix, e agora?", status: "read", fromBot: false, createdAt: "2026-06-02T17:10:00Z" },
-        { id: "msg5", direction: "outbound", type: "text", content: "Perfeito! Vou te passar pro atendimento agora 😊", status: "delivered", fromBot: false, createdAt: "2026-06-02T17:12:00Z" },
-      ],
-    },
-    {
-      id: "cv3",
-      contactId: "ct4",
-      contactName: "Joana",
-      status: "open",
-      botPaused: false,
-      lastMessageAt: "2026-06-02T16:00:00Z",
-      unread: 0,
-      preview: "pix",
-      messages: [
-        { id: "msg6", direction: "inbound", type: "text", content: "pix", status: "read", fromBot: false, createdAt: "2026-06-02T16:00:00Z" },
-      ],
-    },
-  ];
+  // sem conversas de demonstração — começa limpo
+  const conversations: Conversation[] = [];
 
   const keywords: Keyword[] = [
     { id: "k1", word: "quero", matchType: "contains", flowId: "f1" },
@@ -255,11 +207,24 @@ type Store = ReturnType<typeof seed>;
 const DATA_DIR = process.env.DATA_DIR || path.join(process.cwd(), ".data");
 const STORE_FILE = path.join(DATA_DIR, "store.json");
 
+// remove dados de demonstração e contatos "@lid" do store carregado
+function cleanStore(store: Store): Store {
+  const demoIds = new Set(["ct1", "ct2", "ct3", "ct4", "ct5"]);
+  store.contacts = (store.contacts || []).filter(
+    (c) => !demoIds.has(c.id) && !(c.name || "").includes("@") && !(c.phone || "").includes("@"),
+  );
+  const validIds = new Set(store.contacts.map((c) => c.id));
+  store.conversations = (store.conversations || []).filter(
+    (cv) => validIds.has(cv.contactId) && !(cv.contactName || "").includes("@"),
+  );
+  return store;
+}
+
 function loadOrSeed(): Store {
   try {
     if (fs.existsSync(STORE_FILE)) {
       const saved = JSON.parse(fs.readFileSync(STORE_FILE, "utf8"));
-      return { ...seed(), ...saved }; // mescla c/ seed (caso surjam campos novos)
+      return cleanStore({ ...seed(), ...saved }); // mescla + limpa demo/@lid
     }
   } catch (e) {
     console.error("[store] falha ao carregar:", e);
