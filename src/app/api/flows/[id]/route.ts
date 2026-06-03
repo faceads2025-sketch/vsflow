@@ -17,6 +17,14 @@ export async function PUT(req: NextRequest, { params }: { params: { id: string }
   if (body.status !== undefined) flow.status = body.status;
   if (Array.isArray(body.nodes)) flow.nodes = body.nodes;
   if (Array.isArray(body.edges)) flow.edges = body.edges;
+  // define como fluxo padrão de boas-vindas (só um pode ser padrão)
+  if (body.isDefault === true) {
+    db.flows.forEach((f) => (f.isDefault = false));
+    flow.isDefault = true;
+    if (flow.status !== "published") flow.status = "published"; // padrão precisa estar publicado p/ disparar
+  } else if (body.isDefault === false) {
+    flow.isDefault = false;
+  }
   flow.updatedAt = new Date().toISOString();
 
   return NextResponse.json(flow);
