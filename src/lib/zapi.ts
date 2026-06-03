@@ -1,34 +1,39 @@
 // Cliente Z-API (https://z-api.io) — WhatsApp gerenciado na nuvem deles.
-// Não precisa rodar gateway/Baileys local; o Z-API cuida da sessão, QR e mídia.
-//
-// Env necessárias:
-//   ZAPI_INSTANCE_ID   - ID da instância
-//   ZAPI_TOKEN         - token da instância
-//   ZAPI_CLIENT_TOKEN  - token de segurança da conta (header Client-Token)
+// Credenciais vêm da config editável (integration-config), com fallback p/ env.
 
-const INSTANCE = process.env.ZAPI_INSTANCE_ID || "";
-const TOKEN = process.env.ZAPI_TOKEN || "";
-const CLIENT_TOKEN = process.env.ZAPI_CLIENT_TOKEN || "";
+import { getConfig } from "./integration-config";
 
-const BASE = `https://api.z-api.io/instances/${INSTANCE}/token/${TOKEN}`;
+function creds() {
+  const c = getConfig();
+  return { instance: c.zapiInstanceId || "", token: c.zapiToken || "", clientToken: c.zapiClientToken || "" };
+}
 
-export const zapiConfigured = !!(INSTANCE && TOKEN);
+export function zapiConfigured() {
+  const { instance, token } = creds();
+  return !!(instance && token);
+}
+
+function base() {
+  const { instance, token } = creds();
+  return `https://api.z-api.io/instances/${instance}/token/${token}`;
+}
 
 function headers() {
+  const { clientToken } = creds();
   const h: Record<string, string> = { "Content-Type": "application/json" };
-  if (CLIENT_TOKEN) h["Client-Token"] = CLIENT_TOKEN;
+  if (clientToken) h["Client-Token"] = clientToken;
   return h;
 }
 
 async function post(path: string, body: any) {
-  const res = await fetch(`${BASE}${path}`, { method: "POST", headers: headers(), body: JSON.stringify(body) });
+  const res = await fetch(`${base()}${path}`, { method: "POST", headers: headers(), body: JSON.stringify(body) });
   const data = await res.json().catch(() => ({}));
   if (!res.ok) throw new Error(`Z-API ${path}: ${res.status} ${JSON.stringify(data)}`);
   return data;
 }
 
 async function get(path: string) {
-  const res = await fetch(`${BASE}${path}`, { headers: headers(), cache: "no-store" });
+  const res = await fetch(`${base()}${path}`, { headers: headers(), cache: "no-store" });
   return res.json().catch(() => ({}));
 }
 
@@ -64,20 +69,15 @@ export async function zapiSendMedia(opts: {
   }
 }
 
-// status de conexão da instância
 export async function zapiStatus() {
-  // { connected: boolean, smartphoneConnected: boolean, ... }
   return get("/status");
 }
 
-// QR code (base64) para parear o número
 export async function zapiQrCode(): Promise<string | null> {
-  // retorna { value: "data:image/png;base64,..." } quando precisa parear
   const data = await get("/qr-code/image");
   return data?.value || null;
 }
 
-// telefone conectado
 export async function zapiPhone(): Promise<string | null> {
   const d = await get("/device");
   return d?.phone || null;

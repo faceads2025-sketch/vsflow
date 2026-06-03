@@ -19,8 +19,9 @@ RUN npm run build
 
 ENV NODE_ENV=production
 ENV WHATSAPP_MODE=web
-# sessão e uploads em diretórios que podem ser apontados para um volume persistente
+# dados persistentes (volume Railway montado em /data): sessão + config de integração
 ENV WA_AUTH_DIR=/data/wa-auth
+ENV DATA_DIR=/data
 ENV UPLOADS_DIR=/app/public/uploads
 
 EXPOSE 3000

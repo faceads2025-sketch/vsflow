@@ -3,9 +3,11 @@
 import { useEffect, useState } from "react";
 import { PageHeader, Badge } from "@/components/ui";
 import WhatsAppConnect from "@/components/WhatsAppConnect";
+import IntegrationSettings from "@/components/IntegrationSettings";
 
 const sections = [
   "Conexão",
+  "Integração",
   "Campos",
   "Etiquetas",
   "Respostas rápidas",
@@ -44,6 +46,8 @@ export default function SettingsPage() {
           ) : (
             <>
               {active === "Conexão" && <WhatsAppConnect />}
+
+              {active === "Integração" && <IntegrationSettings />}
 
               {active === "Campos" && (
                 <Table cols={["Nome", "Chave", "Tipo"]} rows={data.customFields.map((f: any) => [f.name, f.key, f.type])} />

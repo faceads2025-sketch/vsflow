@@ -6,14 +6,19 @@
 
 import { waSend } from "./wa-client";
 import { zapiSendText, zapiSendMedia } from "./zapi";
-
-const MODE = (process.env.WHATSAPP_MODE || "mock").toLowerCase();
+import { getConfig } from "./integration-config";
 
 const API_VERSION = process.env.WHATSAPP_API_VERSION || "v20.0";
 const PHONE_ID = process.env.WHATSAPP_PHONE_NUMBER_ID;
 const TOKEN = process.env.WHATSAPP_ACCESS_TOKEN;
 
-const isMock = MODE === "mock" || (MODE === "cloud" && (!TOKEN || !PHONE_ID));
+// modo lido da config editável (fallback p/ env dentro do getConfig)
+function getMode() {
+  return (getConfig().mode || "mock").toLowerCase();
+}
+function mockNow(mode: string) {
+  return mode === "mock" || (mode === "cloud" && (!TOKEN || !PHONE_ID));
+}
 
 interface SendTextArgs {
   to: string;
@@ -44,13 +49,14 @@ async function graph(path: string, payload: any) {
 }
 
 export async function sendText({ to, body }: SendTextArgs) {
+  const MODE = getMode();
   if (MODE === "zapi") {
     return zapiSendText(to, body);
   }
   if (MODE === "web") {
     return waSend({ to, type: "text", text: body });
   }
-  if (isMock) {
+  if (mockNow(MODE)) {
     console.log(`[WhatsApp mock] -> ${to}: ${body}`);
     return { mock: true, to, body };
   }
@@ -63,6 +69,7 @@ export async function sendText({ to, body }: SendTextArgs) {
 }
 
 export async function sendTemplate({ to, template, language = "pt_BR", components }: SendTemplateArgs) {
+  const MODE = getMode();
   if (MODE === "zapi") {
     return zapiSendText(to, `[${template}]`); // Z-API não usa templates aprovados
   }
@@ -70,7 +77,7 @@ export async function sendTemplate({ to, template, language = "pt_BR", component
     // WhatsApp Web não usa templates aprovados; envia como texto simples.
     return waSend({ to, type: "text", text: `[${template}]` });
   }
-  if (isMock) {
+  if (mockNow(MODE)) {
     console.log(`[WhatsApp mock template] -> ${to}: ${template}`);
     return { mock: true, to, template };
   }
@@ -89,6 +96,7 @@ export async function sendTemplate({ to, template, language = "pt_BR", component
 export async function sendMedia({ to, type, url, caption }: { to: string; type: "image" | "video" | "audio" | "document"; url: string; caption?: string }) {
   // resolve URLs relativas (uploads locais) para absolutas
   const absUrl = url.startsWith("http") ? url : `${process.env.APP_URL || "http://localhost:3000"}${url}`;
+  const MODE = getMode();
 
   if (MODE === "zapi") {
     return zapiSendMedia({ phone: to, type, url: absUrl, caption });
@@ -96,7 +104,7 @@ export async function sendMedia({ to, type, url, caption }: { to: string; type: 
   if (MODE === "web") {
     return waSend({ to, type, url: absUrl, caption });
   }
-  if (isMock) {
+  if (mockNow(MODE)) {
     console.log(`[WhatsApp mock ${type}] -> ${to}: ${url}`);
     return { mock: true, to, type, url };
   }
@@ -108,4 +116,4 @@ export async function sendMedia({ to, type, url, caption }: { to: string; type: 
   });
 }
 
-export { isMock as whatsappIsMock, MODE as whatsappMode };
+export { getMode as whatsappMode };

@@ -1,14 +1,14 @@
 import { NextResponse } from "next/server";
 import { waStatus } from "@/lib/wa-client";
 import { zapiConfigured, zapiStatus, zapiQrCode, zapiPhone } from "@/lib/zapi";
+import { getConfig } from "@/lib/integration-config";
 
 export const dynamic = "force-dynamic";
 
-const MODE = (process.env.WHATSAPP_MODE || "mock").toLowerCase();
-
 export async function GET() {
+  const MODE = getConfig().mode;
   if (MODE === "zapi") {
-    if (!zapiConfigured) {
+    if (!zapiConfigured()) {
       return NextResponse.json({ status: "offline", qr: null, phone: null, queue: null, provider: "zapi" });
     }
     try {
@@ -33,6 +33,17 @@ export async function GET() {
     }
   }
 
-  // modo web (Baileys gateway)
-  return NextResponse.json(await waStatus());
+  if (MODE === "web") {
+    // Baileys gateway
+    return NextResponse.json({ ...(await waStatus()), provider: "web" });
+  }
+
+  // mock / cloud — sem QR
+  return NextResponse.json({
+    status: MODE === "cloud" ? "connected" : "disconnected",
+    qr: null,
+    phone: null,
+    queue: null,
+    provider: MODE,
+  });
 }

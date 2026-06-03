@@ -2,8 +2,22 @@
 // Usado pelo Dockerfile (CMD). Se um processo morrer, derruba o container (Railway reinicia).
 
 import { spawn } from "node:child_process";
+import { readFileSync, existsSync } from "node:fs";
+import path from "node:path";
 
 const PORT = process.env.PORT || "3000";
+
+// modo efetivo: config salva pela interface (volume) tem prioridade sobre a env
+function effectiveMode() {
+  try {
+    const file = path.join(process.env.DATA_DIR || path.join(process.cwd(), ".data"), "integration.json");
+    if (existsSync(file)) {
+      const m = JSON.parse(readFileSync(file, "utf8"))?.mode;
+      if (m) return String(m).toLowerCase();
+    }
+  } catch {}
+  return (process.env.WHATSAPP_MODE || "web").toLowerCase();
+}
 
 // liga app <-> gateway por localhost (mesmo container)
 process.env.WHATSAPP_MODE ||= "web";
@@ -34,7 +48,7 @@ function run(name, cmd, args) {
   procs.push(p);
 }
 
-const MODE = (process.env.WHATSAPP_MODE || "web").toLowerCase();
+const MODE = effectiveMode();
 console.log(`[start] modo=${MODE} — subindo app na porta ${PORT}`);
 run("web", "npx", ["next", "start", "-p", PORT]);
 
