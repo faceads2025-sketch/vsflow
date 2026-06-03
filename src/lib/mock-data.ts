@@ -295,9 +295,16 @@ export function uid(prefix = "id") {
 
 const digits = (s: string) => (s || "").replace(/\D/g, "");
 
+// casa o contato pelos últimos 8 dígitos (resolve variação de DDI/9º dígito/formato),
+// evitando criar conversas duplicadas pra mesma pessoa.
 export function findContactByPhone(phone: string) {
   const d = digits(phone);
-  return db.contacts.find((c) => digits(c.phone) === d || (d.length >= 8 && digits(c.phone).endsWith(d.slice(-8))));
+  if (!d) return undefined;
+  const tail = d.slice(-8);
+  return db.contacts.find((c) => {
+    const cd = digits(c.phone);
+    return cd === d || (tail.length === 8 && cd.slice(-8) === tail);
+  });
 }
 
 // Cria/atualiza contato + conversa a partir de um número do WhatsApp.

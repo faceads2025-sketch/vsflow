@@ -45,7 +45,8 @@ export async function POST(req: NextRequest) {
   if (alreadySeen(p.messageId || p.id)) return NextResponse.json({ status: "duplicate" });
 
   const fromMe = p.fromMe === true; // mensagem que VOCÊ enviou (entra como "enviada")
-  const phone: string = p.phone || p.participantPhone || p.connectedPhone || "";
+  // o parceiro da conversa (NUNCA o seu número conectado, senão agrupa tudo errado)
+  const phone: string = p.phone || p.participantPhone || "";
   if (!phone) return NextResponse.json({ status: "ignored", reason: "sem phone" });
 
   // extrai conteúdo / mídia (robusto a variações de campo do Z-API)
