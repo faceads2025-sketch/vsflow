@@ -230,9 +230,9 @@ export async function advanceFlow(conv: Conversation, contact: Contact, reply: s
 
 // Decide o que fazer quando chega uma mensagem do lead:
 // 1) se há fluxo em andamento -> avança
-// 2) senão, palavra-chave -> inicia fluxo
-// 3) senão, primeira mensagem da conversa -> inicia fluxo padrão (isDefault publicado)
-export async function handleInboundForFlow(conv: Conversation, contact: Contact, text: string, isFirstMessage: boolean) {
+// 2) senão, palavra-chave -> inicia o fluxo daquela palavra (pode repetir)
+// 3) senão, se o contato AINDA não recebeu o fluxo de boas-vindas -> inicia (1x só)
+export async function handleInboundForFlow(conv: Conversation, contact: Contact, text: string, _isFirstMessage: boolean) {
   if (conv.botPaused) return { handled: false };
 
   if (conv.flowState) {
@@ -248,15 +248,25 @@ export async function handleInboundForFlow(conv: Conversation, contact: Contact,
     return lower.includes(k.word.toLowerCase());
   });
 
-  let flow = kw?.flowId ? db.flows.find((f) => f.id === kw.flowId) : undefined;
-  if (!flow && isFirstMessage) {
-    flow = db.flows.find((f) => f.isDefault && f.status === "published");
+  // palavra-chave: sempre pode disparar (de propósito, pode repetir)
+  if (kw?.flowId) {
+    const flow = db.flows.find((f) => f.id === kw.flowId);
+    if (flow) {
+      await startFlow(flow, conv, contact);
+      return { handled: true, via: "keyword", flow: flow.name };
+    }
   }
 
-  if (flow) {
-    await startFlow(flow, conv, contact);
-    return { handled: true, via: kw ? "keyword" : "default", flow: flow.name };
+  // fluxo padrão de boas-vindas: SÓ UMA VEZ por contato (não repete a cada mensagem)
+  if (!contact.welcomeSent) {
+    const flow = db.flows.find((f) => f.isDefault && f.status === "published");
+    if (flow) {
+      contact.welcomeSent = true; // trava: não dispara de novo
+      await startFlow(flow, conv, contact);
+      return { handled: true, via: "default", flow: flow.name };
+    }
   }
+
   return { handled: false };
 }
 

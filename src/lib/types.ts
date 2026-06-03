@@ -31,6 +31,8 @@ export interface Contact {
   pipelineOrder?: number;
   // qual conexão/número do WhatsApp atende esse contato
   connectionId?: string;
+  // já recebeu o fluxo padrão de boas-vindas? (evita repetir a cada mensagem)
+  welcomeSent?: boolean;
 }
 
 export interface PipelineColumn {
