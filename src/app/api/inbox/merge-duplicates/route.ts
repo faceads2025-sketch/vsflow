@@ -71,5 +71,25 @@ export async function POST() {
     }
   }
 
-  return NextResponse.json({ ok: true, mergedGroups, mergedContacts });
+  // remove contatos "lixo" do @lid (identificador oculto, sem telefone real -> nome contém "@")
+  let removedLid = 0;
+  for (let i = db.contacts.length - 1; i >= 0; i--) {
+    const c = db.contacts[i];
+    const isLid = (c.name || "").includes("@") || (c.phone || "").includes("@");
+    if (!isLid) continue;
+    // se houver um contato real (mesmos últimos 8 dígitos), junta as mensagens nele
+    const real = db.contacts.find((x) => x.id !== c.id && last8(x.phone).length === 8 && last8(x.phone) === last8(c.phone));
+    const lidConv = db.conversations.find((cv) => cv.contactId === c.id);
+    const realConv = real ? db.conversations.find((cv) => cv.contactId === real.id) : undefined;
+    if (lidConv && realConv) {
+      realConv.messages.push(...lidConv.messages);
+      realConv.messages.sort((a, b) => +new Date(a.createdAt) - +new Date(b.createdAt));
+    }
+    const cvi = db.conversations.findIndex((cv) => cv.contactId === c.id);
+    if (cvi >= 0) db.conversations.splice(cvi, 1);
+    db.contacts.splice(i, 1);
+    removedLid++;
+  }
+
+  return NextResponse.json({ ok: true, mergedGroups, mergedContacts, removedLid });
 }

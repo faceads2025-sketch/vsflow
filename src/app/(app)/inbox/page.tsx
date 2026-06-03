@@ -111,7 +111,8 @@ export default function InboxPage() {
     if (!confirm("Juntar conversas duplicadas da mesma pessoa? (mantém o histórico)")) return;
     const r = await fetch("/api/inbox/merge-duplicates", { method: "POST" }).then((x) => x.json());
     await load();
-    alert(r.mergedContacts ? `${r.mergedContacts} conversa(s) duplicada(s) juntada(s).` : "Nenhuma duplicada encontrada.");
+    const total = (r.mergedContacts || 0) + (r.removedLid || 0);
+    alert(total ? `${r.mergedContacts || 0} duplicada(s) juntada(s), ${r.removedLid || 0} contato(s) @lid removido(s).` : "Nada para limpar.");
   }
 
   async function load() {
