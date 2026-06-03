@@ -38,8 +38,11 @@ export async function POST(req: NextRequest) {
   g.__zapiLast!.unshift({ at: new Date().toISOString(), keys: Object.keys(p), payload: p });
   g.__zapiLast = g.__zapiLast!.slice(0, 8);
 
-  // ignora grupos, newsletter e atualizações de status (não são conversas 1:1)
-  if (p.isGroup || p.isNewsletter || p.isStatusReply) return NextResponse.json({ status: "ignored", reason: "grupo/status" });
+  // ignora mensagens enviadas por você (fromMe), grupos, newsletter e status
+  // (revertido: o Inbox volta a mostrar só as mensagens RECEBIDAS)
+  if (p.fromMe || p.isGroup || p.isNewsletter || p.isStatusReply) {
+    return NextResponse.json({ status: "ignored", reason: "fromMe/grupo/status" });
+  }
 
   // dedupe: ignora reenvios do mesmo messageId
   if (alreadySeen(p.messageId || p.id)) return NextResponse.json({ status: "duplicate" });
