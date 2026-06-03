@@ -25,6 +25,7 @@ interface Element {
   type: string;
   value?: string;
   minutes?: number;
+  unit?: "segundos" | "minutos" | "horas";
 }
 
 export default function ContentEditor({
@@ -142,13 +143,24 @@ export default function ContentEditor({
                   />
                 )}
                 {el.type === "delay" && (
-                  <input
-                    type="number"
-                    className="input !py-1.5 text-xs"
-                    placeholder="Minutos"
-                    value={el.minutes ?? 5}
-                    onChange={(e) => updateElement(el.id, { minutes: Number(e.target.value) })}
-                  />
+                  <div className="flex items-center gap-2">
+                    <input
+                      type="number"
+                      min={1}
+                      className="input !py-1.5 text-xs"
+                      value={el.minutes ?? 5}
+                      onChange={(e) => updateElement(el.id, { minutes: Number(e.target.value) })}
+                    />
+                    <select
+                      className="input !py-1.5 text-xs !w-auto"
+                      value={el.unit ?? "minutos"}
+                      onChange={(e) => updateElement(el.id, { unit: e.target.value as any })}
+                    >
+                      <option value="segundos">segundos</option>
+                      <option value="minutos">minutos</option>
+                      <option value="horas">horas</option>
+                    </select>
+                  </div>
                 )}
                 {el.type === "save" && <p className="text-xs text-ink-faint">Salva a resposta do contato.</p>}
                 {el.type === "autooff" && <p className="text-xs text-ink-faint">Desliga a automação para este contato.</p>}

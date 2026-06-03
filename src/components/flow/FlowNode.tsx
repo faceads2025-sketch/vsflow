@@ -18,7 +18,7 @@ function summary(type: FlowNodeType, data: any): string {
     case "buttons":
       return (data.buttons || []).map((b: any) => b.label).join(", ") || "—";
     case "delay":
-      return `Aguardar ${data.minutes || 0} min`;
+      return `Aguardar ${data.minutes || 0} ${data.unit || "minutos"}`;
     case "condition":
       return `${data.field || "campo"} ${data.operator || "="} ${data.value || ""}`;
     case "tag":

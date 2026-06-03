@@ -95,8 +95,15 @@ export default function Inspector({
         )}
 
         {node.type === "delay" && (
-          <Field label="Aguardar (minutos)">
-            <input type="number" className="input" value={data.minutes || 0} onChange={(e) => set({ minutes: Number(e.target.value) })} />
+          <Field label="Aguardar">
+            <div className="flex items-center gap-2">
+              <input type="number" min={1} className="input" value={data.minutes || 0} onChange={(e) => set({ minutes: Number(e.target.value) })} />
+              <select className="input !w-auto" value={data.unit || "minutos"} onChange={(e) => set({ unit: e.target.value })}>
+                <option value="segundos">segundos</option>
+                <option value="minutos">minutos</option>
+                <option value="horas">horas</option>
+              </select>
+            </div>
           </Field>
         )}
 

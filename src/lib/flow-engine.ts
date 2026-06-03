@@ -129,7 +129,8 @@ async function runFrom(flow: Flow, conv: Conversation, contact: Contact, fromNod
         // agenda a continuação após X minutos (processo de longa duração)
         const next = nextNodeId(flow, node.id);
         conv.flowState = { flowId: flow.id, nodeId: node.id, vars };
-        const ms = Math.max(0, Number(node.data.minutes || 0)) * 60000;
+        const mult = node.data.unit === "segundos" ? 1000 : node.data.unit === "horas" ? 3600000 : 60000;
+        const ms = Math.max(0, Number(node.data.minutes || 0)) * mult;
         if (next) {
           setTimeout(() => {
             const f = db.flows.find((x) => x.id === flow.id);
