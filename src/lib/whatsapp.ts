@@ -94,8 +94,11 @@ export async function sendTemplate({ to, template, language = "pt_BR", component
 }
 
 export async function sendMedia({ to, type, url, caption }: { to: string; type: "image" | "video" | "audio" | "document"; url: string; caption?: string }) {
-  // resolve URLs relativas (uploads locais) para absolutas
-  const absUrl = url.startsWith("http") ? url : `${process.env.APP_URL || "http://localhost:3000"}${url}`;
+  // resolve URLs relativas para absolutas usando a URL pública (Z-API precisa baixar o arquivo)
+  const publicUrl =
+    process.env.APP_URL ||
+    (process.env.RAILWAY_PUBLIC_DOMAIN ? `https://${process.env.RAILWAY_PUBLIC_DOMAIN}` : "http://localhost:3000");
+  const absUrl = url.startsWith("http") ? url : `${publicUrl}${url}`;
   const MODE = getMode();
 
   if (MODE === "zapi") {

@@ -370,7 +370,7 @@ async function startSock() {
           await mkdir(UPLOADS_DIR, { recursive: true });
           const filename = `wa-${Date.now()}.${extOf(mimetype, mtype)}`;
           await writeFile(path.join(UPLOADS_DIR, filename), buf);
-          mediaUrl = `/uploads/${filename}`;
+          mediaUrl = `/api/files/${filename}`;
           console.log(`[wa] mídia recebida (${mtype}) salva: ${mediaUrl}`);
         } catch (e) {
           console.error("[wa] falha ao baixar mídia recebida:", e);

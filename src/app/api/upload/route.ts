@@ -19,14 +19,15 @@ export async function POST(req: NextRequest) {
   }
 
   const bytes = Buffer.from(await file.arrayBuffer());
-  const dir = path.join(process.cwd(), "public", "uploads");
+  const dir = process.env.UPLOADS_DIR || path.join(process.cwd(), "public", "uploads");
   await mkdir(dir, { recursive: true });
 
   const safe = file.name.replace(/[^a-zA-Z0-9._-]/g, "_");
   const filename = `${Date.now()}-${safe}`;
   await writeFile(path.join(dir, filename), bytes);
 
-  const url = `/uploads/${filename}`;
+  // servido pela rota dinâmica /api/files (funciona em produção e é público p/ o Z-API)
+  const url = `/api/files/${filename}`;
   return NextResponse.json({ url, name: file.name, type: file.type, size: file.size });
 }
 

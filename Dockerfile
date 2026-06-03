@@ -22,7 +22,7 @@ ENV WHATSAPP_MODE=web
 # dados persistentes (volume Railway montado em /data): sessão + config de integração
 ENV WA_AUTH_DIR=/data/wa-auth
 ENV DATA_DIR=/data
-ENV UPLOADS_DIR=/app/public/uploads
+ENV UPLOADS_DIR=/data/uploads
 
 EXPOSE 3000
 
