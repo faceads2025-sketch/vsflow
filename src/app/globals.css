@@ -71,6 +71,14 @@ body {
 .dark .bg-gray-200 {
   background-color: #283142 !important;
 }
+/* selecionados/ativos (azul claro) -> azul escuro sutil no dark */
+.dark .bg-brand-50 {
+  background-color: #15243a !important;
+}
+.dark .text-brand-600,
+.dark .text-brand-500 {
+  color: #5cc6e6 !important;
+}
 .dark .border-gray-100,
 .dark .border-gray-200 {
   border-color: #232c3a !important;
