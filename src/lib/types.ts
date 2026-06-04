@@ -33,6 +33,8 @@ export interface Contact {
   connectionId?: string;
   // já recebeu o fluxo padrão de boas-vindas? (evita repetir a cada mensagem)
   welcomeSent?: boolean;
+  // palavras-chave que já dispararam para este contato (trava de "só 1x")
+  keywordsFired?: string[];
 }
 
 export interface PipelineColumn {

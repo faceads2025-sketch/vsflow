@@ -44,20 +44,33 @@ async function emit(
   conv.lastMessageAt = now;
   conv.preview = content || `[${kind}]`;
 
+  const to = contact.phone || "";
+  const label = content || `[${kind}]`;
+  // @lid = identificador oculto (lead de anúncio), NÃO é número real -> Z-API não entrega.
+  // Não tenta enviar (evita "fantasma": aparece no app mas nunca chega no WhatsApp).
+  if (/@/.test(to) || to.replace(/\D/g, "").length < 10) {
+    console.warn(`[flow] ⛔ NÃO enviado (número inválido/@lid "${to}"): ${label}`);
+    return;
+  }
+
   try {
     if (kind === "text") {
-      if (content) await sendText({ to: contact.phone, body: content, connectionId: contact.connectionId });
+      if (content) {
+        const r = await sendText({ to, body: content, connectionId: contact.connectionId });
+        console.log(`[flow] ✅ texto -> ${to}: ${JSON.stringify(r)}`);
+      }
     } else if (mediaUrl) {
-      await sendMedia({
-        to: contact.phone,
+      const r = await sendMedia({
+        to,
         type: kind === "file" ? "document" : (kind as any),
         url: mediaUrl,
         caption: content || undefined,
         connectionId: contact.connectionId,
       });
+      console.log(`[flow] ✅ ${kind} -> ${to}: ${JSON.stringify(r)}`);
     }
   } catch (e) {
-    console.error("[flow] falha ao enviar:", e);
+    console.error(`[flow] ❌ FALHA enviar ${kind} -> ${to}:`, e);
   }
 }
 
@@ -248,10 +261,14 @@ export async function handleInboundForFlow(conv: Conversation, contact: Contact,
     return lower.includes(k.word.toLowerCase());
   });
 
-  // palavra-chave: sempre pode disparar (de propósito, pode repetir)
+  // palavra-chave: dispara só 1x por contato (não repete se a mesma frase voltar)
   if (kw?.flowId) {
+    if (contact.keywordsFired?.includes(kw.id)) {
+      return { handled: false, via: "keyword-ja-disparada" };
+    }
     const flow = db.flows.find((f) => f.id === kw.flowId);
     if (flow) {
+      contact.keywordsFired = [...(contact.keywordsFired || []), kw.id];
       console.log(`[flow] palavra-chave "${kw.word}" -> ${flow.name} (${contact.phone})`);
       await startFlow(flow, conv, contact);
       return { handled: true, via: "keyword", flow: flow.name };
