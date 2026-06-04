@@ -151,6 +151,7 @@ async function runFrom(flow: Flow, conv: Conversation, contact: Contact, fromNod
           setTimeout(() => {
             const f = db.flows.find((x) => x.id === flow.id);
             const c = db.conversations.find((x) => x.id === conv.id);
+            if (c?.botPaused) { if (c) c.flowState = undefined; return; } // atendente assumiu -> não continua
             if (f && c && c.flowState?.nodeId === node.id) {
               c.flowState = undefined;
               runFrom(f, c, contact, next).catch(() => {});
@@ -189,6 +190,7 @@ function scheduleNoReply(flow: Flow, conv: Conversation, contact: Contact, node:
     const f = db.flows.find((x) => x.id === flow.id);
     const c = db.conversations.find((x) => x.id === conv.id);
     if (!f || !c) return;
+    if (c.botPaused) return; // atendente assumiu -> não dispara o "não respondeu"
     // só dispara se o contato AINDA está esperando neste mesmo bloco (ou seja, não respondeu)
     if (c.flowState?.nodeId !== nid) return;
     const ct = db.contacts.find((x) => x.id === c.contactId);
