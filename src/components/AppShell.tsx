@@ -35,7 +35,7 @@ export default function AppShell({ children }: { children: React.ReactNode }) {
             <div className="grid h-7 w-7 place-items-center rounded-lg bg-gradient-to-br from-brand-400 to-accent-green text-white">
               <MessageSquare className="h-4 w-4" />
             </div>
-            <span className="font-bold tracking-tight">conversaflow</span>
+            <span className="font-bold tracking-tight">VS Flow</span>
           </div>
         </div>
 

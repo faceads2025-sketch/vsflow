@@ -44,7 +44,7 @@ function LoginForm() {
           <div className="grid h-12 w-12 place-items-center rounded-xl bg-gradient-to-br from-brand-400 to-accent-green text-white">
             <MessageSquare className="h-6 w-6" />
           </div>
-          <h1 className="text-xl font-bold">ConversaFlow</h1>
+          <h1 className="text-xl font-bold">VS Flow</h1>
           <p className="text-sm text-ink-soft">Entre para acessar o painel</p>
         </div>
 

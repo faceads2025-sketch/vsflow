@@ -3,7 +3,7 @@ import "./globals.css";
 import "reactflow/dist/style.css";
 
 export const metadata: Metadata = {
-  title: "ConversaFlow — Automação de WhatsApp",
+  title: "VS Flow — Automação de WhatsApp",
   description: "SaaS de automação de atendimento e fluxos para WhatsApp",
 };
 

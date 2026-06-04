@@ -162,7 +162,7 @@ function seed() {
   ];
 
   const templates: Template[] = [
-    { id: "tp1", name: "boas_vindas", category: "MARKETING", language: "pt_BR", status: "APPROVED", body: "Olá {{1}}! Seja bem-vindo. Como posso ajudar?", footer: "ConversaFlow" },
+    { id: "tp1", name: "boas_vindas", category: "MARKETING", language: "pt_BR", status: "APPROVED", body: "Olá {{1}}! Seja bem-vindo. Como posso ajudar?", footer: "VS Flow" },
     { id: "tp2", name: "promo_fds", category: "MARKETING", language: "pt_BR", status: "APPROVED", body: "🔥 {{1}}, sua promo de fim de semana chegou! 50% OFF." },
     { id: "tp3", name: "codigo_verificacao", category: "AUTHENTICATION", language: "pt_BR", status: "PENDING", body: "Seu código é {{1}}." },
   ];

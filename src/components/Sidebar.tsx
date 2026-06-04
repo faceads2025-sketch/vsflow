@@ -85,7 +85,7 @@ export default function Sidebar({ onNavigate }: { onNavigate?: () => void }) {
             <div className="grid h-8 w-8 place-items-center rounded-lg bg-gradient-to-br from-brand-400 to-accent-green text-white">
               <MessageSquare className="h-4 w-4" />
             </div>
-            <span className="text-lg font-bold tracking-tight">conversaflow</span>
+            <span className="text-lg font-bold tracking-tight">VS Flow</span>
           </div>
         )}
         <button
