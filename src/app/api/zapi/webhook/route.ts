@@ -52,15 +52,27 @@ export async function POST(req: NextRequest) {
   const phone: string = p.phone || p.participantPhone || "";
   if (!phone) return NextResponse.json({ status: "ignored", reason: "sem phone" });
 
-  // extrai conteúdo / mídia (robusto a variações de campo do Z-API)
+  // desembrulha mensagem temporária/ephemeral/viewOnce (o conteúdo pode vir aninhado)
+  const m: any = p.ephemeralMessage?.message || p.viewOnceMessage?.message || p.message || p;
+
+  // extrai conteúdo / mídia (robusto a variações de campo do Z-API e mensagens temporárias)
   let type = "text";
-  let text = p.text?.message || p.body || "";
+  let text =
+    (typeof m.text === "string" ? m.text : m.text?.message) ||
+    (typeof p.text === "string" ? p.text : p.text?.message) ||
+    p.body ||
+    "";
   let mediaUrl: string | undefined;
-  if (p.image) { type = "image"; mediaUrl = mediaUrlOf(p.image); text = p.image.caption || ""; }
-  else if (p.video) { type = "video"; mediaUrl = mediaUrlOf(p.video); text = p.video.caption || ""; }
-  else if (p.audio || p.ptt) { type = "audio"; mediaUrl = mediaUrlOf(p.audio || p.ptt); }
-  else if (p.document) { type = "file"; mediaUrl = mediaUrlOf(p.document); text = p.document.fileName || p.document.caption || ""; }
-  else if (p.sticker) { type = "image"; mediaUrl = mediaUrlOf(p.sticker); }
+  const img = m.image || p.image;
+  const vid = m.video || p.video;
+  const aud = m.audio || p.audio || m.ptt || p.ptt;
+  const doc = m.document || p.document;
+  const stk = m.sticker || p.sticker;
+  if (img) { type = "image"; mediaUrl = mediaUrlOf(img); text = img.caption || text; }
+  else if (vid) { type = "video"; mediaUrl = mediaUrlOf(vid); text = vid.caption || text; }
+  else if (aud) { type = "audio"; mediaUrl = mediaUrlOf(aud); }
+  else if (doc) { type = "file"; mediaUrl = mediaUrlOf(doc); text = doc.fileName || doc.caption || text; }
+  else if (stk) { type = "image"; mediaUrl = mediaUrlOf(stk); }
 
   if (!text && !mediaUrl) return NextResponse.json({ status: "ignored", reason: "sem texto/midia", keys: Object.keys(p) });
 
