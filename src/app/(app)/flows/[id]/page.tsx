@@ -16,6 +16,7 @@ import * as Icons from "lucide-react";
 import { ArrowLeft, Save, Play, Plus, X } from "lucide-react";
 import FlowNode from "@/components/flow/FlowNode";
 import Inspector from "@/components/flow/Inspector";
+import FlowPreview from "@/components/flow/FlowPreview";
 import { MENU_ITEMS, BLOCKS, blockByType } from "@/components/flow/blocks";
 import type { FlowNodeType } from "@/lib/types";
 
@@ -30,7 +31,7 @@ export default function FlowBuilder() {
   const [status, setStatus] = useState("draft");
   const [selectedId, setSelectedId] = useState<string | null>(null);
   const [saving, setSaving] = useState(false);
-  const [runLog, setRunLog] = useState<string[] | null>(null);
+  const [showPreview, setShowPreview] = useState(false);
   const [menuOpen, setMenuOpen] = useState(false);
   const [toast, setToast] = useState<string | null>(null);
 
@@ -103,10 +104,8 @@ export default function FlowBuilder() {
     showToast(publish ? "Fluxo publicado! ✅" : "Fluxo salvo! ✅");
   }
 
-  async function testRun() {
-    await save();
-    const res = await fetch(`/api/flows/${id}/run`, { method: "POST", headers: { "Content-Type": "application/json" }, body: "{}" }).then((r) => r.json());
-    setRunLog(res.run?.steps?.map((s: any) => s.action) ?? []);
+  function testRun() {
+    setShowPreview(true);
   }
 
   return (
@@ -182,14 +181,8 @@ export default function FlowBuilder() {
             )}
           </div>
 
-          {runLog && (
-            <div className="absolute bottom-6 left-6 z-10 max-w-sm rounded-2xl bg-gray-900 p-4 text-xs text-white shadow-soft">
-              <div className="mb-2 flex items-center justify-between">
-                <p className="font-semibold">Simulação do fluxo</p>
-                <button onClick={() => setRunLog(null)} className="opacity-60 hover:opacity-100">×</button>
-              </div>
-              {runLog.length === 0 ? <p>Sem passos.</p> : runLog.map((l, i) => <p key={i} className="text-white/80">• {l}</p>)}
-            </div>
+          {showPreview && (
+            <FlowPreview nodes={nodes} edges={edges} contactName={name ? `${name} (teste)` : "Contato de teste"} onClose={() => setShowPreview(false)} />
           )}
         </div>
 
