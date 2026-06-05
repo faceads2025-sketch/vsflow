@@ -151,7 +151,7 @@ export default function FlowPreview({ nodes, edges, contactName = "Contato de te
   }
 
   return (
-    <div className="absolute left-1/2 top-6 z-20 flex h-[560px] w-[360px] max-w-[92vw] -translate-x-1/2 flex-col overflow-hidden rounded-2xl border border-gray-200 bg-white shadow-2xl">
+    <div className="absolute left-6 top-6 z-20 flex h-[560px] w-[360px] max-w-[92vw] flex-col overflow-hidden rounded-2xl border border-gray-200 bg-white shadow-2xl">
       {/* cabeçalho */}
       <div className="shrink-0 border-b border-gray-100 bg-white px-4 py-3">
         <div className="flex items-center justify-between">
