@@ -1,3 +1,4 @@
+import Link from "next/link";
 import { db } from "@/lib/mock-data";
 import { Stat } from "@/components/ui";
 import Topbar from "@/components/Topbar";
@@ -5,7 +6,15 @@ import { UserCheck, Reply, Archive, Users, CheckCircle2, Clock, TrendingUp, XCir
 
 export const dynamic = "force-dynamic";
 
-export default function DashboardPage() {
+const PERIODS = [
+  { key: "hoje", label: "Hoje", days: 0 },
+  { key: "7d", label: "7d", days: 7 },
+  { key: "15d", label: "15d", days: 15 },
+  { key: "30d", label: "30d", days: 30 },
+  { key: "tudo", label: "Tudo", days: -1 },
+];
+
+export default function DashboardPage({ searchParams }: { searchParams: { period?: string } }) {
   const total = db.conversations.length;
   const botReplied = db.conversations.filter((c) => c.messages.some((m) => m.fromBot)).length;
   const botPct = total ? Math.round((botReplied / total) * 100) : 0;
@@ -13,13 +22,29 @@ export default function DashboardPage() {
   const firstResponses = db.conversations.filter((c) => c.messages.some((m) => m.direction === "outbound")).length;
   const assignments = db.conversations.filter((c) => c.assignedTo).length;
 
-  // ===== Conversão (a partir do pipeline + leads que chegaram) =====
+  // ===== Conversão (a partir do pipeline + leads que chegaram), filtrada por período =====
+  const period = PERIODS.find((p) => p.key === searchParams.period) || PERIODS[3]; // padrão: 30d
+  const cutoff = (() => {
+    if (period.days < 0) return null; // "Tudo": sem corte
+    const d = new Date();
+    if (period.days === 0) d.setHours(0, 0, 0, 0); // "Hoje": desde a meia-noite
+    else d.setDate(d.getDate() - period.days);
+    return d;
+  })();
+  const inPeriod = (iso?: string) => {
+    if (!cutoff) return true;
+    if (!iso) return false;
+    return new Date(iso) >= cutoff;
+  };
+  // leads que ENTRARAM no período (pela data de entrada) — conversão por coorte
+  const periodContacts = db.contacts.filter((c) => inPeriod(c.subscribedAt));
+
   // conta contatos pelas colunas do pipeline, casando pelo nome (funciona mesmo com colunas customizadas)
   const countByCol = (matcher: (name: string) => boolean) => {
     const ids = new Set(db.pipelineColumns.filter((c) => matcher(c.name.toLowerCase())).map((c) => c.id));
-    return db.contacts.filter((c) => c.pipelineColumnId && ids.has(c.pipelineColumnId)).length;
+    return periodContacts.filter((c) => c.pipelineColumnId && ids.has(c.pipelineColumnId)).length;
   };
-  const entraram = db.contacts.length; // todo mundo que chegou no app
+  const entraram = periodContacts.length; // leads que chegaram no período
   const compraram = countByCol((n) => (n.includes("pagou") && !n.includes("não") && !n.includes("nao")) || n.includes("comprou") || n.includes("pago"));
   const aguardando = countByCol((n) => n.includes("aguard"));
   const naoPagou = countByCol((n) => n.includes("não pagou") || n.includes("nao pagou") || n.includes("perdido"));
@@ -38,7 +63,21 @@ export default function DashboardPage() {
 
         {/* Conversão de leads */}
         <section className="mt-8">
-          <h3 className="mb-4 text-lg font-semibold">Conversão de leads <span className="text-sm font-normal text-ink-faint">• do pipeline</span></h3>
+          <div className="mb-4 flex flex-wrap items-center gap-3">
+            <h3 className="text-lg font-semibold">Conversão de leads <span className="text-sm font-normal text-ink-faint">• do pipeline</span></h3>
+            <div className="ml-auto inline-flex rounded-full border border-gray-200 bg-white p-1">
+              {PERIODS.map((p) => (
+                <Link
+                  key={p.key}
+                  href={`/dashboard?period=${p.key}`}
+                  scroll={false}
+                  className={`rounded-full px-3 py-1 text-sm font-medium transition ${p.key === period.key ? "bg-brand-400 text-white" : "text-ink-soft hover:bg-gray-50"}`}
+                >
+                  {p.label}
+                </Link>
+              ))}
+            </div>
+          </div>
           <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-4">
             <ConvCard icon={<Users className="h-5 w-5" />} value={entraram} label="Entraram" accent="#3FC8E4" sub="leads que chegaram" />
             <ConvCard icon={<CheckCircle2 className="h-5 w-5" />} value={compraram} label="Compraram" accent="#10B981" sub="coluna Pagou" />
