@@ -46,10 +46,11 @@ async function emit(
 
   const to = contact.phone || "";
   const label = content || `[${kind}]`;
-  // @lid = identificador oculto (lead de anúncio), NÃO é número real -> Z-API não entrega.
-  // Não tenta enviar (evita "fantasma": aparece no app mas nunca chega no WhatsApp).
-  if (/@/.test(to) || to.replace(/\D/g, "").length < 10) {
-    console.warn(`[flow] ⛔ NÃO enviado (número inválido/@lid "${to}"): ${label}`);
+  // só bloqueia se NÃO houver destino algum. @lid (lead de anúncio) agora É enviado:
+  // o Z-API consegue entregar usando o próprio identificador da conversa.
+  const digits = to.replace(/\D/g, "");
+  if (!to || (digits.length < 8 && !to.includes("@"))) {
+    console.warn(`[flow] ⛔ NÃO enviado (sem número válido "${to}"): ${label}`);
     return;
   }
 

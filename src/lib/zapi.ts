@@ -41,7 +41,13 @@ async function get(path: string, connId?: string) {
   return res.json().catch(() => ({}));
 }
 
-const normalizePhone = (phone: string) => (phone || "").replace(/\D/g, "");
+const normalizePhone = (phone: string) => {
+  const p = (phone || "").trim();
+  // contatos @lid (identificador oculto de leads de anúncio): envia no formato que o
+  // Z-API espera (mantém os dígitos + "@lid"), em vez de virar só dígitos inválidos.
+  if (p.includes("@")) return p.replace(/[^0-9a-z@.]/gi, "");
+  return p.replace(/\D/g, "");
+};
 
 export async function zapiSendText(phone: string, message: string, connId?: string) {
   const delayTyping = Math.min(6, Math.max(1, Math.round(message.length / 25)));

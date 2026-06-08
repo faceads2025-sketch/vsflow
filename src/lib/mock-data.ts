@@ -207,16 +207,13 @@ type Store = ReturnType<typeof seed>;
 const DATA_DIR = process.env.DATA_DIR || path.join(process.cwd(), ".data");
 const STORE_FILE = path.join(DATA_DIR, "store.json");
 
-// remove dados de demonstração e contatos "@lid" do store carregado
+// remove apenas os dados de demonstração do store carregado
+// (NÃO remove mais contatos @lid: leads de anúncio chegam assim e estavam sumindo!)
 function cleanStore(store: Store): Store {
   const demoIds = new Set(["ct1", "ct2", "ct3", "ct4", "ct5"]);
-  store.contacts = (store.contacts || []).filter(
-    (c) => !demoIds.has(c.id) && !(c.name || "").includes("@") && !(c.phone || "").includes("@"),
-  );
+  store.contacts = (store.contacts || []).filter((c) => !demoIds.has(c.id));
   const validIds = new Set(store.contacts.map((c) => c.id));
-  store.conversations = (store.conversations || []).filter(
-    (cv) => validIds.has(cv.contactId) && !(cv.contactName || "").includes("@"),
-  );
+  store.conversations = (store.conversations || []).filter((cv) => validIds.has(cv.contactId));
   return store;
 }
 
