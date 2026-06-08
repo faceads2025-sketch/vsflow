@@ -231,6 +231,9 @@ export default function InboxPage() {
                   <p className="truncate font-medium">{c.contactName}</p>
                   <span className="text-xs text-ink-faint">{formatTime(c.lastMessageAt)}</span>
                 </div>
+                {c.phone?.includes("@") && (
+                  <p className="truncate text-[11px] font-medium text-amber-600">🔒 protegido · {c.phone}</p>
+                )}
                 <p className="truncate text-sm text-ink-faint">{c.preview}</p>
               </div>
               {c.unread > 0 && <span className="grid h-5 w-5 place-items-center rounded-full bg-brand-400 text-xs font-bold text-white">{c.unread}</span>}
@@ -251,9 +254,13 @@ export default function InboxPage() {
                 <Avatar name={active.contactName} src={active.avatar} />
                 <div className="min-w-0">
                   <p className="truncate font-semibold">{active.contactName}</p>
-                  <p className="truncate text-xs text-ink-faint">
-                    {active.connectionLabel ? `📱 ${active.connectionLabel}` : active.botPaused ? "Automação pausada" : "Automação ativa"}
-                  </p>
+                  {active.phone?.includes("@") ? (
+                    <p className="truncate text-xs font-medium text-amber-600">🔒 protegido · {active.phone}</p>
+                  ) : (
+                    <p className="truncate text-xs text-ink-faint">
+                      {active.connectionLabel ? `📱 ${active.connectionLabel}` : active.botPaused ? "Automação pausada" : "Automação ativa"}
+                    </p>
+                  )}
                 </div>
               </button>
             </div>
@@ -351,11 +358,13 @@ export default function InboxPage() {
                   <div className="grid h-20 w-20 place-items-center rounded-full bg-gray-200 text-2xl font-semibold text-gray-600">{active.contactName.charAt(0).toUpperCase()}</div>
                 )}
                 <p className="text-lg font-semibold">{active.contactName}</p>
-                {active.phone && (
+                {active.phone?.includes("@") ? (
+                  <span className="text-sm font-medium text-amber-600">🔒 protegido · {active.phone}</span>
+                ) : active.phone ? (
                   <a href={`https://wa.me/${active.phone.replace(/\D/g, "")}`} target="_blank" rel="noreferrer" className="text-sm text-brand-500 hover:underline">
                     {active.phone}
                   </a>
-                )}
+                ) : null}
               </div>
 
               <div className="space-y-2 text-sm">
