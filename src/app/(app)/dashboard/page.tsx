@@ -1,7 +1,7 @@
 import { db } from "@/lib/mock-data";
 import { Stat } from "@/components/ui";
 import Topbar from "@/components/Topbar";
-import { UserCheck, Reply, Archive } from "lucide-react";
+import { UserCheck, Reply, Archive, Users, CheckCircle2, Clock, TrendingUp, XCircle } from "lucide-react";
 
 export const dynamic = "force-dynamic";
 
@@ -13,6 +13,18 @@ export default function DashboardPage() {
   const firstResponses = db.conversations.filter((c) => c.messages.some((m) => m.direction === "outbound")).length;
   const assignments = db.conversations.filter((c) => c.assignedTo).length;
 
+  // ===== Conversão (a partir do pipeline + leads que chegaram) =====
+  // conta contatos pelas colunas do pipeline, casando pelo nome (funciona mesmo com colunas customizadas)
+  const countByCol = (matcher: (name: string) => boolean) => {
+    const ids = new Set(db.pipelineColumns.filter((c) => matcher(c.name.toLowerCase())).map((c) => c.id));
+    return db.contacts.filter((c) => c.pipelineColumnId && ids.has(c.pipelineColumnId)).length;
+  };
+  const entraram = db.contacts.length; // todo mundo que chegou no app
+  const compraram = countByCol((n) => (n.includes("pagou") && !n.includes("não") && !n.includes("nao")) || n.includes("comprou") || n.includes("pago"));
+  const aguardando = countByCol((n) => n.includes("aguard"));
+  const naoPagou = countByCol((n) => n.includes("não pagou") || n.includes("nao pagou") || n.includes("perdido"));
+  const taxaConversao = entraram ? Math.round((compraram / entraram) * 100) : 0;
+
   return (
     <div className="pb-12">
       <Topbar />
@@ -23,6 +35,34 @@ export default function DashboardPage() {
           </h2>
           <p className="mt-1 text-sm text-ink-faint">{db.account.companyName} • espaço de trabalho</p>
         </div>
+
+        {/* Conversão de leads */}
+        <section className="mt-8">
+          <h3 className="mb-4 text-lg font-semibold">Conversão de leads <span className="text-sm font-normal text-ink-faint">• do pipeline</span></h3>
+          <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-4">
+            <ConvCard icon={<Users className="h-5 w-5" />} value={entraram} label="Entraram" accent="#3FC8E4" sub="leads que chegaram" />
+            <ConvCard icon={<CheckCircle2 className="h-5 w-5" />} value={compraram} label="Compraram" accent="#10B981" sub="coluna Pagou" />
+            <ConvCard icon={<Clock className="h-5 w-5" />} value={aguardando} label="Aguardando" accent="#F59E0B" sub="aguardando resposta" />
+            <ConvCard icon={<XCircle className="h-5 w-5" />} value={naoPagou} label="Não pagou / perdido" accent="#EF4444" sub="não converteram" />
+          </div>
+
+          {/* taxa de conversão em destaque */}
+          <div className="card mt-4 p-6">
+            <div className="flex items-center justify-between">
+              <div className="flex items-center gap-3">
+                <span className="grid h-10 w-10 place-items-center rounded-full bg-emerald-50 text-emerald-600"><TrendingUp className="h-5 w-5" /></span>
+                <div>
+                  <p className="text-sm text-ink-soft">Taxa de conversão</p>
+                  <p className="text-xs text-ink-faint">{compraram} compras de {entraram} leads</p>
+                </div>
+              </div>
+              <p className="text-3xl font-bold text-emerald-600">{taxaConversao}%</p>
+            </div>
+            <div className="mt-4 h-2.5 w-full overflow-hidden rounded-full bg-gray-100">
+              <div className="h-full rounded-full bg-emerald-500 transition-all" style={{ width: `${Math.min(100, taxaConversao)}%` }} />
+            </div>
+          </div>
+        </section>
 
         {/* Gerenciamento de chats */}
         <section className="mt-8">
@@ -70,6 +110,20 @@ export default function DashboardPage() {
           </div>
         </section>
       </div>
+    </div>
+  );
+}
+
+function ConvCard({ icon, value, label, accent, sub }: { icon: React.ReactNode; value: number; label: string; accent: string; sub: string }) {
+  return (
+    <div className="card p-5">
+      <div className="flex items-center justify-between">
+        <span className="grid h-10 w-10 place-items-center rounded-full" style={{ backgroundColor: `${accent}1a`, color: accent }}>{icon}</span>
+        <span className="h-8 w-1 rounded-full" style={{ backgroundColor: accent }} />
+      </div>
+      <p className="mt-3 text-3xl font-bold">{value}</p>
+      <p className="text-sm font-medium text-ink">{label}</p>
+      <p className="text-xs text-ink-faint">{sub}</p>
     </div>
   );
 }
