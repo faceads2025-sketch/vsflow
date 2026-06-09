@@ -147,9 +147,10 @@ export default function InboxPage() {
     if (!active) return;
     const res = await fetch(`/api/inbox/${active.id}/advance-flow`, { method: "POST", headers: { "Content-Type": "application/json" }, body: "{}" }).then((r) => r.json());
     if (!res.ok) {
-      alert(res.reason || "Não foi possível avançar o fluxo.");
+      window.alert("⚠️ " + (res.reason || "Não foi possível avançar o fluxo."));
       return;
     }
+    window.alert(`✅ Próxima etapa enviada (${res.sent} mensagem(ns)).`);
     setShowInfo(false);
     setTimeout(load, 800);
   }
