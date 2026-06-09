@@ -142,6 +142,18 @@ export default function InboxPage() {
     setTimeout(load, 800);
   }
 
+  // dispara a "segunda parte" do fluxo (avança como se o lead tivesse respondido)
+  async function advanceFlowManual() {
+    if (!active) return;
+    const res = await fetch(`/api/inbox/${active.id}/advance-flow`, { method: "POST", headers: { "Content-Type": "application/json" }, body: "{}" }).then((r) => r.json());
+    if (!res.ok) {
+      alert(res.reason || "Não foi possível avançar o fluxo.");
+      return;
+    }
+    setShowInfo(false);
+    setTimeout(load, 800);
+  }
+
   async function setStatus(columnId: string) {
     if (!active?.contactId) return;
     setConvs((prev) => prev.map((c) => (c.id === active.id ? { ...c, pipelineColumnId: columnId } : c)));
@@ -384,10 +396,20 @@ export default function InboxPage() {
                 </div>
               )}
 
+              {/* Avançar fluxo (2ª parte / resposta do lead) */}
+              <div className="rounded-2xl border border-gray-100 p-4">
+                <p className="mb-2 flex items-center gap-2 text-sm font-semibold"><Workflow className="h-4 w-4 text-emerald-500" /> Avançar fluxo (resposta)</p>
+                <p className="mb-3 text-xs text-ink-faint">Dispara a próxima etapa do fluxo, como se o lead tivesse respondido. Use quando ele respondeu mas o fluxo não avançou sozinho.</p>
+                <button onClick={advanceFlowManual} className="flex w-full items-center justify-between rounded-xl border border-emerald-200 bg-emerald-50 px-3 py-2 text-left text-sm font-medium text-emerald-700 transition hover:bg-emerald-100">
+                  Disparar próxima etapa
+                  <Send className="h-4 w-4" />
+                </button>
+              </div>
+
               {/* Enviar fluxo manualmente */}
               <div className="rounded-2xl border border-gray-100 p-4">
                 <p className="mb-2 flex items-center gap-2 text-sm font-semibold"><Workflow className="h-4 w-4 text-brand-500" /> Enviar fluxo manualmente</p>
-                <p className="mb-3 text-xs text-ink-faint">Dispara um fluxo agora para este contato (útil quando não disparou sozinho).</p>
+                <p className="mb-3 text-xs text-ink-faint">Dispara um fluxo do começo para este contato (útil quando não disparou sozinho).</p>
                 <div className="space-y-2">
                   {flows.filter((f) => f.status === "published").map((f) => (
                     <button key={f.id} onClick={() => runFlowManual(f.id)} className="flex w-full items-center justify-between rounded-xl border border-gray-200 px-3 py-2 text-left text-sm transition hover:bg-brand-50 hover:border-brand-300">
