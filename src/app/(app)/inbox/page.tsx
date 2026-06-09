@@ -158,8 +158,8 @@ export default function InboxPage() {
       showToast(res.reason || "Não foi possível avançar o fluxo.", false);
       return;
     }
-    showToast(`Próxima etapa enviada (${res.sent} mensagem(ns)).`, true);
-    setTimeout(load, 800);
+    showToast("Próxima etapa disparada — as mensagens aparecem em instantes.", true);
+    setTimeout(load, 1500);
   }
 
   async function setStatus(columnId: string) {
