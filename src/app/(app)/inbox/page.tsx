@@ -151,9 +151,21 @@ export default function InboxPage() {
   // dispara a "segunda parte" do fluxo (avança como se o lead tivesse respondido)
   async function advanceFlowManual() {
     if (!active) return;
-    const res = await fetch(`/api/inbox/${active.id}/advance-flow`, { method: "POST", headers: { "Content-Type": "application/json" }, body: "{}" })
-      .then((r) => r.json())
-      .catch(() => ({ ok: false, reason: "Falha de conexão ao chamar o servidor." }));
+    let res: any;
+    try {
+      const r = await fetch(`/api/inbox/${active.id}/advance-flow`, { method: "POST", headers: { "Content-Type": "application/json" }, body: "{}" });
+      const raw = await r.text();
+      try {
+        res = JSON.parse(raw);
+      } catch {
+        // resposta não é JSON (HTML de erro/login) -> mostra status + trecho do corpo
+        showToast(`HTTP ${r.status} — resposta inesperada: ${raw.slice(0, 120)}`, false);
+        return;
+      }
+    } catch (e: any) {
+      showToast(`Erro de rede: ${e?.message || String(e)} (id=${active.id})`, false);
+      return;
+    }
     if (!res.ok) {
       showToast(res.reason || "Não foi possível avançar o fluxo.", false);
       return;
