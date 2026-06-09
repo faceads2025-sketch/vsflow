@@ -25,7 +25,13 @@ export default function InboxPage() {
   const [text, setText] = useState("");
   const [search, setSearch] = useState("");
   const [syncing, setSyncing] = useState(false);
+  const [toast, setToast] = useState<{ msg: string; ok: boolean } | null>(null);
   const bottomRef = useRef<HTMLDivElement>(null);
+
+  function showToast(msg: string, ok: boolean) {
+    setToast({ msg, ok });
+    setTimeout(() => setToast(null), 6000);
+  }
 
   // gravação de áudio
   const [recording, setRecording] = useState(false);
@@ -145,13 +151,14 @@ export default function InboxPage() {
   // dispara a "segunda parte" do fluxo (avança como se o lead tivesse respondido)
   async function advanceFlowManual() {
     if (!active) return;
-    const res = await fetch(`/api/inbox/${active.id}/advance-flow`, { method: "POST", headers: { "Content-Type": "application/json" }, body: "{}" }).then((r) => r.json());
+    const res = await fetch(`/api/inbox/${active.id}/advance-flow`, { method: "POST", headers: { "Content-Type": "application/json" }, body: "{}" })
+      .then((r) => r.json())
+      .catch(() => ({ ok: false, reason: "Falha de conexão ao chamar o servidor." }));
     if (!res.ok) {
-      window.alert("⚠️ " + (res.reason || "Não foi possível avançar o fluxo."));
+      showToast(res.reason || "Não foi possível avançar o fluxo.", false);
       return;
     }
-    window.alert(`✅ Próxima etapa enviada (${res.sent} mensagem(ns)).`);
-    setShowInfo(false);
+    showToast(`Próxima etapa enviada (${res.sent} mensagem(ns)).`, true);
     setTimeout(load, 800);
   }
 
@@ -217,6 +224,13 @@ export default function InboxPage() {
 
   return (
     <div className="flex h-full">
+      {/* toast de feedback (avançar fluxo etc.) */}
+      {toast && (
+        <div className={`fixed left-1/2 top-4 z-[60] max-w-md -translate-x-1/2 rounded-xl px-4 py-3 text-sm font-medium text-white shadow-soft ${toast.ok ? "bg-emerald-600" : "bg-amber-600"}`}>
+          {toast.ok ? "✅ " : "⚠️ "}{toast.msg}
+        </div>
+      )}
+
       {/* Lista */}
       <div className={`${activeId ? "hidden lg:flex" : "flex"} w-full shrink-0 flex-col border-r border-gray-100 bg-white lg:w-80`}>
         <div className="border-b border-gray-100 p-4">
