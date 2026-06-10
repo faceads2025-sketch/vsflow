@@ -35,6 +35,11 @@ export interface Contact {
   welcomeSent?: boolean;
   // palavras-chave que já dispararam para este contato (trava de "só 1x")
   keywordsFired?: string[];
+  // ===== detalhes do pedido (card do pipeline / AfterPay) =====
+  deliveryStatus?: string; // previsão de entrega (chave do status: no_prazo, atrasado, etc.)
+  shopeeDate?: string; // data que a Shopee deu para entrega (YYYY-MM-DD)
+  orderValue?: number; // valor do pedido (com promoção); soma na receita do Financeiro
+  commitmentAudioUrl?: string; // áudio do cliente marcado como comprovante de compromisso de pagar
 }
 
 export interface PipelineColumn {

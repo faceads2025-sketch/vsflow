@@ -22,19 +22,25 @@ function metricsFromPipeline(period: string) {
     const ids = new Set(db.pipelineColumns.filter((c) => matcher(c.name.toLowerCase())).map((c) => c.id));
     return contacts.filter((c) => c.pipelineColumnId && ids.has(c.pipelineColumnId)).length;
   };
+  const colIds = (matcher: (n: string) => boolean) => new Set(db.pipelineColumns.filter((c) => matcher(c.name.toLowerCase())).map((c) => c.id));
+  const isPaid = (n: string) => (n.includes("pagou") && !n.includes("não") && !n.includes("nao")) || n.includes("comprou") || n.includes("pago");
+  const paidIds = colIds(isPaid);
+  const paidContacts = contacts.filter((c) => c.pipelineColumnId && paidIds.has(c.pipelineColumnId));
+
   const leads = contacts.length;
-  const vendas = countByCol((n) => (n.includes("pagou") && !n.includes("não") && !n.includes("nao")) || n.includes("comprou") || n.includes("pago"));
+  const vendas = paidContacts.length;
+  const orderValues = paidContacts.map((c) => c.orderValue); // valor real de cada pedido pago (pode ser undefined)
   // enviados detectados no pipeline: colunas "agendado"/"enviado"/"postado"/"em transporte"
   // + os que já pagaram (também foram enviados). É o total que já saiu pra entrega (AfterPay).
   const enviadosPipeline =
     countByCol((n) => n.includes("agendad") || n.includes("enviad") || n.includes("postad") || n.includes("transporte") || n.includes("entrega")) + vendas;
-  return { leads, vendas, enviadosPipeline };
+  return { leads, vendas, enviadosPipeline, orderValues };
 }
 
 export async function GET(req: NextRequest) {
   const period = new URL(req.url).searchParams.get("period") || "30d";
   const f = (db as any).finance || { trafficSpend: 0, productPrice: 0, productCost: 0, shippingCost: 0, shippedQty: 0 };
-  const { leads, vendas, enviadosPipeline } = metricsFromPipeline(period);
+  const { leads, vendas, enviadosPipeline, orderValues } = metricsFromPipeline(period);
 
   // ENVIADOS (AfterPay/COD): sempre puxado automaticamente do pipeline (agendados/enviados + pagos)
   const enviados = enviadosPipeline;
@@ -45,7 +51,8 @@ export async function GET(req: NextRequest) {
   const aguardandoPagto = Math.max(0, enviados - vendas); // enviados que ainda não pagaram
   const valorEmRisco = aguardandoPagto * ((f.productCost || 0) + (f.shippingCost || 0)); // caixa parado/risco
 
-  const receita = vendas * (f.productPrice || 0);
+  // receita = soma do valor REAL de cada pedido pago (com promo); usa o preço padrão se o pedido não tem valor
+  const receita = orderValues.reduce((s: number, v) => s + (v != null ? v : f.productPrice || 0), 0);
   const custoProduto = vendas * (f.productCost || 0);
   const custoFrete = vendas * (f.shippingCost || 0);
   const custoTotal = (f.trafficSpend || 0) + custoProduto + custoFrete;

@@ -27,6 +27,11 @@ export async function GET() {
       columnId: c.pipelineColumnId && columns.some((col) => col.id === c.pipelineColumnId) ? c.pipelineColumnId : firstCol,
       order: c.pipelineOrder ?? 0,
       campaignId: c.campaignId || null,
+      // detalhes do pedido (AfterPay)
+      deliveryStatus: c.deliveryStatus || null,
+      shopeeDate: c.shopeeDate || null,
+      orderValue: c.orderValue ?? null,
+      commitmentAudioUrl: c.commitmentAudioUrl || null,
     };
   });
 
