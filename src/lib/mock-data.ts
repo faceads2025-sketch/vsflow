@@ -182,8 +182,17 @@ function seed() {
     { id: "tm2", name: "Maria", email: "maria@empresa.com", role: "agent", status: "active" },
   ];
 
+  // configuração financeira (gestão de tráfego, produto e frete)
+  const finance = {
+    trafficSpend: 0, // total gasto com tráfego/anúncios (R$)
+    productPrice: 0, // valor de venda do produto (R$)
+    productCost: 0, // custo/compra do produto (R$)
+    shippingCost: 0, // frete por envio (R$)
+  };
+
   return {
     account,
+    finance,
     tags,
     pipelineColumns,
     campaigns,
