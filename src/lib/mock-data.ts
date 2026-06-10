@@ -188,6 +188,7 @@ function seed() {
     productPrice: 0, // valor de venda do produto (R$)
     productCost: 0, // custo/compra do produto (R$)
     shippingCost: 0, // frete por envio (R$)
+    shippedQty: 0, // quantidade de produtos JÁ ENVIADOS (AfterPay/COD; manual)
   };
 
   return {

@@ -113,7 +113,7 @@ export async function POST(req: NextRequest) {
 
 // GET = inspeção dos últimos payloads recebidos (diagnóstico)
 export async function GET() {
-  return NextResponse.json({ version: "finance-v1", count: g.__zapiLast!.length, last: g.__zapiLast });
+  return NextResponse.json({ version: "finance-v2-afterpay", count: g.__zapiLast!.length, last: g.__zapiLast });
 }
 
 export const dynamic = "force-dynamic";

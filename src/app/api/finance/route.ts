@@ -24,13 +24,24 @@ function metricsFromPipeline(period: string) {
   };
   const leads = contacts.length;
   const vendas = countByCol((n) => (n.includes("pagou") && !n.includes("não") && !n.includes("nao")) || n.includes("comprou") || n.includes("pago"));
-  return { leads, vendas };
+  // enviados detectados no pipeline: coluna "enviado" + os que já pagaram (também foram enviados)
+  const enviadosPipeline = countByCol((n) => n.includes("enviad") || n.includes("postad") || n.includes("transporte")) + vendas;
+  return { leads, vendas, enviadosPipeline };
 }
 
 export async function GET(req: NextRequest) {
   const period = new URL(req.url).searchParams.get("period") || "30d";
-  const f = (db as any).finance || { trafficSpend: 0, productPrice: 0, productCost: 0, shippingCost: 0 };
-  const { leads, vendas } = metricsFromPipeline(period);
+  const f = (db as any).finance || { trafficSpend: 0, productPrice: 0, productCost: 0, shippingCost: 0, shippedQty: 0 };
+  const { leads, vendas, enviadosPipeline } = metricsFromPipeline(period);
+
+  // ENVIADOS (AfterPay/COD): usa a quantidade manual se preenchida, senão o detectado no pipeline
+  const enviados = (f.shippedQty || 0) > 0 ? f.shippedQty : enviadosPipeline;
+  // gasto de caixa com os ENVIOS (sai antes do pagamento no AfterPay)
+  const gastoProdutoEnviado = enviados * (f.productCost || 0); // valor gasto comprando o produto enviado
+  const gastoFreteEnviado = enviados * (f.shippingCost || 0); // valor gasto com frete dos envios
+  const investidoLogistica = gastoProdutoEnviado + gastoFreteEnviado; // caixa investido em envios
+  const aguardandoPagto = Math.max(0, enviados - vendas); // enviados que ainda não pagaram
+  const valorEmRisco = aguardandoPagto * ((f.productCost || 0) + (f.shippingCost || 0)); // caixa parado/risco
 
   const receita = vendas * (f.productPrice || 0);
   const custoProduto = vendas * (f.productCost || 0);
@@ -47,14 +58,17 @@ export async function GET(req: NextRequest) {
   return NextResponse.json({
     config: f,
     period,
-    metrics: { leads, vendas, receita, custoProduto, custoFrete, custoTotal, lucro, roas, cpl, cpa, ticketMedio, margem, taxaConversao },
+    metrics: {
+      leads, vendas, receita, custoProduto, custoFrete, custoTotal, lucro, roas, cpl, cpa, ticketMedio, margem, taxaConversao,
+      enviados, gastoProdutoEnviado, gastoFreteEnviado, investidoLogistica, aguardandoPagto, valorEmRisco,
+    },
   });
 }
 
 export async function POST(req: NextRequest) {
   const body = await req.json().catch(() => ({}));
-  const f = (db as any).finance || ((db as any).finance = { trafficSpend: 0, productPrice: 0, productCost: 0, shippingCost: 0 });
-  for (const k of ["trafficSpend", "productPrice", "productCost", "shippingCost"]) {
+  const f = (db as any).finance || ((db as any).finance = { trafficSpend: 0, productPrice: 0, productCost: 0, shippingCost: 0, shippedQty: 0 });
+  for (const k of ["trafficSpend", "productPrice", "productCost", "shippingCost", "shippedQty"]) {
     if (body[k] != null && !isNaN(Number(body[k]))) f[k] = Number(body[k]);
   }
   return NextResponse.json({ ok: true, config: f });

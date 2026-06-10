@@ -1,7 +1,7 @@
 "use client";
 
 import { useCallback, useEffect, useState } from "react";
-import { Megaphone, Package, Truck, DollarSign, TrendingUp, TrendingDown, Users, ShoppingCart, Percent, Target } from "lucide-react";
+import { Megaphone, Package, Truck, DollarSign, TrendingUp, TrendingDown, Users, ShoppingCart, Percent, Target, Boxes, Send, Clock, AlertTriangle } from "lucide-react";
 
 const PERIODS = [
   { key: "hoje", label: "Hoje" },
@@ -13,15 +13,16 @@ const PERIODS = [
 
 const brl = (n: number) => (n || 0).toLocaleString("pt-BR", { style: "currency", currency: "BRL" });
 
-type Config = { trafficSpend: number; productPrice: number; productCost: number; shippingCost: number };
+type Config = { trafficSpend: number; productPrice: number; productCost: number; shippingCost: number; shippedQty: number };
 type Metrics = {
   leads: number; vendas: number; receita: number; custoProduto: number; custoFrete: number;
   custoTotal: number; lucro: number; roas: number; cpl: number; cpa: number; ticketMedio: number; margem: number; taxaConversao: number;
+  enviados: number; gastoProdutoEnviado: number; gastoFreteEnviado: number; investidoLogistica: number; aguardandoPagto: number; valorEmRisco: number;
 };
 
 export default function FinancePage() {
   const [period, setPeriod] = useState("30d");
-  const [config, setConfig] = useState<Config>({ trafficSpend: 0, productPrice: 0, productCost: 0, shippingCost: 0 });
+  const [config, setConfig] = useState<Config>({ trafficSpend: 0, productPrice: 0, productCost: 0, shippingCost: 0, shippedQty: 0 });
   const [metrics, setMetrics] = useState<Metrics | null>(null);
   const [saving, setSaving] = useState(false);
 
@@ -90,6 +91,23 @@ export default function FinancePage() {
           </div>
         </section>
 
+        {/* Envios (AfterPay / pagamento na entrega) */}
+        <section className="mt-10">
+          <h3 className="mb-1 text-lg font-semibold">Envios (AfterPay / pagamento na entrega)</h3>
+          <p className="mb-4 text-xs text-ink-faint">No AfterPay você gasta com produto + frete <b>na hora do envio</b>, antes de receber. Aqui você vê quanto já saiu do caixa.</p>
+          <div className="mb-4 grid gap-4 sm:grid-cols-2 lg:grid-cols-4">
+            <CostInput icon={<Boxes className="h-5 w-5" />} accent="#6366F1" label="Qtd. enviada" hint="produtos já enviados (deixe 0 p/ usar o pipeline)" value={config.shippedQty} onSave={(v) => saveField("shippedQty", v)} unit="" />
+            <BigCard label="Produtos enviados" value={String(metrics?.enviados ?? 0)} sub="total despachado" accent="#6366F1" icon={<Send className="h-5 w-5" />} />
+            <BigCard label="Aguardando pagamento" value={String(metrics?.aguardandoPagto ?? 0)} sub="enviados que não pagaram" accent="#F59E0B" icon={<Clock className="h-5 w-5" />} />
+            <BigCard label="Valor em risco" value={brl(metrics?.valorEmRisco ?? 0)} sub="produto+frete dos não pagos" accent="#EF4444" icon={<AlertTriangle className="h-5 w-5" />} />
+          </div>
+          <div className="grid gap-4 sm:grid-cols-3">
+            <BigCard label="Gasto comprando produto" value={brl(metrics?.gastoProdutoEnviado ?? 0)} sub={`${metrics?.enviados ?? 0} × ${brl(config.productCost)}`} accent="#F59E0B" icon={<Package className="h-5 w-5" />} />
+            <BigCard label="Gasto com frete (envios)" value={brl(metrics?.gastoFreteEnviado ?? 0)} sub={`${metrics?.enviados ?? 0} × ${brl(config.shippingCost)}`} accent="#3FC8E4" icon={<Truck className="h-5 w-5" />} />
+            <BigCard label="Total investido em envios" value={brl(metrics?.investidoLogistica ?? 0)} sub="caixa que já saiu" accent="#EF4444" icon={<TrendingDown className="h-5 w-5" />} big />
+          </div>
+        </section>
+
         {/* Indicadores */}
         <section className="mt-8">
           <h3 className="mb-4 text-lg font-semibold">Indicadores</h3>
@@ -123,7 +141,7 @@ export default function FinancePage() {
   );
 }
 
-function CostInput({ icon, accent, label, hint, value, onSave }: { icon: React.ReactNode; accent: string; label: string; hint: string; value: number; onSave: (v: string) => void }) {
+function CostInput({ icon, accent, label, hint, value, onSave, unit = "R$" }: { icon: React.ReactNode; accent: string; label: string; hint: string; value: number; onSave: (v: string) => void; unit?: string }) {
   const [local, setLocal] = useState(String(value ?? 0));
   useEffect(() => { setLocal(String(value ?? 0)); }, [value]);
   return (
@@ -136,7 +154,7 @@ function CostInput({ icon, accent, label, hint, value, onSave }: { icon: React.R
         </div>
       </div>
       <div className="flex items-center gap-1 rounded-xl border border-gray-200 px-3 py-2 focus-within:border-brand-400">
-        <span className="text-sm text-ink-faint">R$</span>
+        {unit && <span className="text-sm text-ink-faint">{unit}</span>}
         <input
           type="number" inputMode="decimal" step="0.01" min="0"
           value={local}
