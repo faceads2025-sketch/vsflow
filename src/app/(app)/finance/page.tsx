@@ -1,7 +1,7 @@
 "use client";
 
 import { useCallback, useEffect, useState } from "react";
-import { Megaphone, Package, Truck, DollarSign, TrendingUp, TrendingDown, Users, ShoppingCart, Percent, Target, Boxes, Send, Clock, AlertTriangle } from "lucide-react";
+import { Megaphone, Package, Truck, DollarSign, TrendingUp, TrendingDown, Users, ShoppingCart, Percent, Target, Send, Clock, AlertTriangle } from "lucide-react";
 
 const PERIODS = [
   { key: "hoje", label: "Hoje" },
@@ -95,9 +95,8 @@ export default function FinancePage() {
         <section className="mt-10">
           <h3 className="mb-1 text-lg font-semibold">Envios (AfterPay / pagamento na entrega)</h3>
           <p className="mb-4 text-xs text-ink-faint">No AfterPay você gasta com produto + frete <b>na hora do envio</b>, antes de receber. Aqui você vê quanto já saiu do caixa.</p>
-          <div className="mb-4 grid gap-4 sm:grid-cols-2 lg:grid-cols-4">
-            <CostInput icon={<Boxes className="h-5 w-5" />} accent="#6366F1" label="Qtd. enviada" hint="deixe 0 = puxa os Agendados/Enviados do pipeline" value={config.shippedQty} onSave={(v) => saveField("shippedQty", v)} unit="" />
-            <BigCard label="Produtos enviados" value={String(metrics?.enviados ?? 0)} sub="total despachado" accent="#6366F1" icon={<Send className="h-5 w-5" />} />
+          <div className="mb-4 grid gap-4 sm:grid-cols-3">
+            <BigCard label="Produtos enviados" value={String(metrics?.enviados ?? 0)} sub="agendados/enviados do pipeline" accent="#6366F1" icon={<Send className="h-5 w-5" />} />
             <BigCard label="Aguardando pagamento" value={String(metrics?.aguardandoPagto ?? 0)} sub="enviados que não pagaram" accent="#F59E0B" icon={<Clock className="h-5 w-5" />} />
             <BigCard label="Valor em risco" value={brl(metrics?.valorEmRisco ?? 0)} sub="produto+frete dos não pagos" accent="#EF4444" icon={<AlertTriangle className="h-5 w-5" />} />
           </div>

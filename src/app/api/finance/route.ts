@@ -36,8 +36,8 @@ export async function GET(req: NextRequest) {
   const f = (db as any).finance || { trafficSpend: 0, productPrice: 0, productCost: 0, shippingCost: 0, shippedQty: 0 };
   const { leads, vendas, enviadosPipeline } = metricsFromPipeline(period);
 
-  // ENVIADOS (AfterPay/COD): usa a quantidade manual se preenchida, senão o detectado no pipeline
-  const enviados = (f.shippedQty || 0) > 0 ? f.shippedQty : enviadosPipeline;
+  // ENVIADOS (AfterPay/COD): sempre puxado automaticamente do pipeline (agendados/enviados + pagos)
+  const enviados = enviadosPipeline;
   // gasto de caixa com os ENVIOS (sai antes do pagamento no AfterPay)
   const gastoProdutoEnviado = enviados * (f.productCost || 0); // valor gasto comprando o produto enviado
   const gastoFreteEnviado = enviados * (f.shippingCost || 0); // valor gasto com frete dos envios
