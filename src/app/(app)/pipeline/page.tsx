@@ -347,7 +347,7 @@ function CardDetailsModal({ lead, onClose, onSaved }: { lead: Lead; onClose: () 
 
   return (
     <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/40 p-4" onClick={onClose}>
-      <div className="w-full max-w-md rounded-2xl bg-white p-5 shadow-soft" onClick={(e) => e.stopPropagation()}>
+      <div className="flex max-h-[90vh] w-full max-w-md flex-col overflow-y-auto rounded-2xl bg-white p-5 shadow-soft" onClick={(e) => e.stopPropagation()}>
         <div className="mb-4 flex items-center justify-between">
           <h3 className="text-lg font-semibold">Detalhes do pedido</h3>
           <button onClick={onClose} className="text-ink-faint hover:text-ink"><X className="h-5 w-5" /></button>
@@ -379,14 +379,16 @@ function CardDetailsModal({ lead, onClose, onSaved }: { lead: Lead; onClose: () 
         {clientAudios.length === 0 ? (
           <p className="mb-4 flex items-center gap-1 text-xs text-ink-faint"><MessageSquareText className="h-3.5 w-3.5" /> Nenhum áudio recebido deste contato ainda.</p>
         ) : (
-          <div className="mb-4 space-y-2">
-            {clientAudios.map((a) => (
-              <label key={a.url} className={`flex items-center gap-2 rounded-xl border p-2 ${audioUrl === a.url ? "border-indigo-400 bg-indigo-50" : "border-gray-200"}`}>
-                <input type="radio" name="audio" checked={audioUrl === a.url} onChange={() => setAudioUrl(audioUrl === a.url ? "" : a.url)} />
-                <audio src={a.url} controls className="h-8 w-full" />
-              </label>
-            ))}
-            <p className="text-[11px] text-ink-faint">Marcar um áudio aplica a tag “💰 Comprometeu pagar” no contato.</p>
+          <div className="mb-4">
+            <div className="max-h-44 space-y-2 overflow-y-auto rounded-xl border border-gray-100 bg-gray-50 p-2">
+              {clientAudios.map((a) => (
+                <label key={a.url} className={`flex items-center gap-2 rounded-xl border p-2 ${audioUrl === a.url ? "border-indigo-400 bg-indigo-50" : "border-gray-200 bg-white"}`}>
+                  <input type="radio" name="audio" checked={audioUrl === a.url} onChange={() => setAudioUrl(audioUrl === a.url ? "" : a.url)} className="shrink-0" />
+                  <audio src={a.url} controls className="h-8 w-full min-w-0" />
+                </label>
+              ))}
+            </div>
+            <p className="mt-1.5 text-[11px] text-ink-faint">Marcar um áudio aplica a tag “💰 Comprometeu pagar” no contato.</p>
           </div>
         )}
 
