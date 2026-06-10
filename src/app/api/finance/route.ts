@@ -24,8 +24,10 @@ function metricsFromPipeline(period: string) {
   };
   const leads = contacts.length;
   const vendas = countByCol((n) => (n.includes("pagou") && !n.includes("não") && !n.includes("nao")) || n.includes("comprou") || n.includes("pago"));
-  // enviados detectados no pipeline: coluna "enviado" + os que já pagaram (também foram enviados)
-  const enviadosPipeline = countByCol((n) => n.includes("enviad") || n.includes("postad") || n.includes("transporte")) + vendas;
+  // enviados detectados no pipeline: colunas "agendado"/"enviado"/"postado"/"em transporte"
+  // + os que já pagaram (também foram enviados). É o total que já saiu pra entrega (AfterPay).
+  const enviadosPipeline =
+    countByCol((n) => n.includes("agendad") || n.includes("enviad") || n.includes("postad") || n.includes("transporte") || n.includes("entrega")) + vendas;
   return { leads, vendas, enviadosPipeline };
 }
 

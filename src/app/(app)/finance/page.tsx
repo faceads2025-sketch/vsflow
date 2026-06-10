@@ -96,7 +96,7 @@ export default function FinancePage() {
           <h3 className="mb-1 text-lg font-semibold">Envios (AfterPay / pagamento na entrega)</h3>
           <p className="mb-4 text-xs text-ink-faint">No AfterPay você gasta com produto + frete <b>na hora do envio</b>, antes de receber. Aqui você vê quanto já saiu do caixa.</p>
           <div className="mb-4 grid gap-4 sm:grid-cols-2 lg:grid-cols-4">
-            <CostInput icon={<Boxes className="h-5 w-5" />} accent="#6366F1" label="Qtd. enviada" hint="produtos já enviados (deixe 0 p/ usar o pipeline)" value={config.shippedQty} onSave={(v) => saveField("shippedQty", v)} unit="" />
+            <CostInput icon={<Boxes className="h-5 w-5" />} accent="#6366F1" label="Qtd. enviada" hint="deixe 0 = puxa os Agendados/Enviados do pipeline" value={config.shippedQty} onSave={(v) => saveField("shippedQty", v)} unit="" />
             <BigCard label="Produtos enviados" value={String(metrics?.enviados ?? 0)} sub="total despachado" accent="#6366F1" icon={<Send className="h-5 w-5" />} />
             <BigCard label="Aguardando pagamento" value={String(metrics?.aguardandoPagto ?? 0)} sub="enviados que não pagaram" accent="#F59E0B" icon={<Clock className="h-5 w-5" />} />
             <BigCard label="Valor em risco" value={brl(metrics?.valorEmRisco ?? 0)} sub="produto+frete dos não pagos" accent="#EF4444" icon={<AlertTriangle className="h-5 w-5" />} />
