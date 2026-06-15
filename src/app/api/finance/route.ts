@@ -23,9 +23,12 @@ function metricsFromPipeline(period: string) {
     return contacts.filter((c) => c.pipelineColumnId && ids.has(c.pipelineColumnId)).length;
   };
   const colIds = (matcher: (n: string) => boolean) => new Set(db.pipelineColumns.filter((c) => matcher(c.name.toLowerCase())).map((c) => c.id));
+  // VENDA PAGA: se o usuário escolheu uma coluna específica, usa SÓ ela; senão detecta por nome
+  const salesColumnId = (db as any).finance?.salesColumnId;
   const isPaid = (n: string) => (n.includes("pagou") && !n.includes("não") && !n.includes("nao")) || n.includes("comprou") || n.includes("pago");
-  const paidIds = colIds(isPaid);
-  const paidContacts = contacts.filter((c) => c.pipelineColumnId && paidIds.has(c.pipelineColumnId));
+  const paidContacts = salesColumnId
+    ? contacts.filter((c) => c.pipelineColumnId === salesColumnId)
+    : contacts.filter((c) => c.pipelineColumnId && colIds(isPaid).has(c.pipelineColumnId));
 
   const leads = contacts.length;
   const vendas = paidContacts.length;
@@ -67,6 +70,7 @@ export async function GET(req: NextRequest) {
   return NextResponse.json({
     config: f,
     period,
+    columns: db.pipelineColumns.map((c) => ({ id: c.id, name: c.name })),
     metrics: {
       leads, vendas, receita, custoProduto, custoFrete, custoTotal, lucro, roas, cpl, cpa, ticketMedio, margem, taxaConversao,
       enviados, gastoProdutoEnviado, gastoFreteEnviado, investidoLogistica, aguardandoPagto, valorEmRisco,
@@ -76,9 +80,10 @@ export async function GET(req: NextRequest) {
 
 export async function POST(req: NextRequest) {
   const body = await req.json().catch(() => ({}));
-  const f = (db as any).finance || ((db as any).finance = { trafficSpend: 0, productPrice: 0, productCost: 0, shippingCost: 0, shippedQty: 0 });
+  const f = (db as any).finance || ((db as any).finance = { trafficSpend: 0, productPrice: 0, productCost: 0, shippingCost: 0, shippedQty: 0, salesColumnId: "" });
   for (const k of ["trafficSpend", "productPrice", "productCost", "shippingCost", "shippedQty"]) {
     if (body[k] != null && !isNaN(Number(body[k]))) f[k] = Number(body[k]);
   }
+  if ("salesColumnId" in body) f.salesColumnId = body.salesColumnId || "";
   return NextResponse.json({ ok: true, config: f });
 }

@@ -13,7 +13,7 @@ const PERIODS = [
 
 const brl = (n: number) => (n || 0).toLocaleString("pt-BR", { style: "currency", currency: "BRL" });
 
-type Config = { trafficSpend: number; productPrice: number; productCost: number; shippingCost: number; shippedQty: number };
+type Config = { trafficSpend: number; productPrice: number; productCost: number; shippingCost: number; shippedQty: number; salesColumnId: string };
 type Metrics = {
   leads: number; vendas: number; receita: number; custoProduto: number; custoFrete: number;
   custoTotal: number; lucro: number; roas: number; cpl: number; cpa: number; ticketMedio: number; margem: number; taxaConversao: number;
@@ -22,15 +22,25 @@ type Metrics = {
 
 export default function FinancePage() {
   const [period, setPeriod] = useState("30d");
-  const [config, setConfig] = useState<Config>({ trafficSpend: 0, productPrice: 0, productCost: 0, shippingCost: 0, shippedQty: 0 });
+  const [config, setConfig] = useState<Config>({ trafficSpend: 0, productPrice: 0, productCost: 0, shippingCost: 0, shippedQty: 0, salesColumnId: "" });
   const [metrics, setMetrics] = useState<Metrics | null>(null);
+  const [columns, setColumns] = useState<{ id: string; name: string }[]>([]);
   const [saving, setSaving] = useState(false);
 
   const load = useCallback(async () => {
     const r = await fetch(`/api/finance?period=${period}`).then((x) => x.json());
     setConfig(r.config);
     setMetrics(r.metrics);
+    setColumns(r.columns || []);
   }, [period]);
+
+  async function saveColumn(value: string) {
+    setSaving(true);
+    setConfig((c) => ({ ...c, salesColumnId: value }));
+    await fetch("/api/finance", { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ salesColumnId: value }) });
+    await load();
+    setSaving(false);
+  }
 
   useEffect(() => { load(); }, [load]);
 
@@ -74,11 +84,25 @@ export default function FinancePage() {
           </div>
         </section>
 
+        {/* Qual coluna conta como venda paga */}
+        <section className="mt-6">
+          <div className="card flex flex-wrap items-center gap-3 p-4">
+            <div>
+              <p className="text-sm font-medium text-ink">Coluna que conta como venda paga</p>
+              <p className="text-[11px] text-ink-faint">define quantas vendas/receita o Financeiro usa (evita contar coluna errada)</p>
+            </div>
+            <select value={config.salesColumnId} onChange={(e) => saveColumn(e.target.value)} className="input ml-auto max-w-[240px]">
+              <option value="">Detectar por nome (pago/pagou)</option>
+              {columns.map((c) => <option key={c.id} value={c.id}>{c.name}</option>)}
+            </select>
+          </div>
+        </section>
+
         {/* Resultado */}
-        <section className="mt-10">
+        <section className="mt-6">
           <h3 className="mb-4 text-lg font-semibold">Resultado</h3>
           <div className="grid gap-4 md:grid-cols-3">
-            <BigCard label="Receita" value={brl(metrics?.receita ?? 0)} sub={`${metrics?.vendas ?? 0} venda(s) × ${brl(config.productPrice)}`} accent="#10B981" icon={<DollarSign className="h-5 w-5" />} />
+            <BigCard label="Receita" value={brl(metrics?.receita ?? 0)} sub={`${metrics?.vendas ?? 0} venda(s) paga(s) — soma dos valores reais`} accent="#10B981" icon={<DollarSign className="h-5 w-5" />} />
             <BigCard label="Custo total" value={brl(metrics?.custoTotal ?? 0)} sub="tráfego + produto + frete" accent="#EF4444" icon={<TrendingDown className="h-5 w-5" />} />
             <BigCard
               label="Lucro"

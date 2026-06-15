@@ -189,6 +189,7 @@ function seed() {
     productCost: 0, // custo/compra do produto (R$)
     shippingCost: 0, // frete por envio (R$)
     shippedQty: 0, // quantidade de produtos JÁ ENVIADOS (AfterPay/COD; manual)
+    salesColumnId: "", // qual coluna do pipeline conta como VENDA PAGA (vazio = detecta por nome)
   };
 
   return {

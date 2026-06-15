@@ -45,7 +45,10 @@ export default function DashboardPage({ searchParams }: { searchParams: { period
     return periodContacts.filter((c) => c.pipelineColumnId && ids.has(c.pipelineColumnId)).length;
   };
   const entraram = periodContacts.length; // leads que chegaram no período
-  const compraram = countByCol((n) => (n.includes("pagou") && !n.includes("não") && !n.includes("nao")) || n.includes("comprou") || n.includes("pago"));
+  const salesColId = (db as any).finance?.salesColumnId;
+  const compraram = salesColId
+    ? periodContacts.filter((c) => c.pipelineColumnId === salesColId).length
+    : countByCol((n) => (n.includes("pagou") && !n.includes("não") && !n.includes("nao")) || n.includes("comprou") || n.includes("pago"));
   const aguardando = countByCol((n) => n.includes("aguard"));
   const naoPagou = countByCol((n) => n.includes("não pagou") || n.includes("nao pagou") || n.includes("perdido"));
   const taxaConversao = entraram ? Math.round((compraram / entraram) * 100) : 0;
