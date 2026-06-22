@@ -40,6 +40,10 @@ export interface Contact {
   shopeeDate?: string; // data que a Shopee deu para entrega (YYYY-MM-DD)
   orderValue?: number; // valor do pedido (com promoção); soma na receita do Financeiro
   commitmentAudioUrl?: string; // áudio do cliente marcado como comprovante de compromisso de pagar
+  // ===== cobrança agendada (dispara o fluxo de cobrança no dia do pagamento) =====
+  billingDate?: string; // dia em que o cliente vai pagar (YYYY-MM-DD)
+  billingFlowId?: string; // qual fluxo de cobrança disparar nesse dia
+  billingFired?: boolean; // já disparou a cobrança? (evita repetir)
 }
 
 export interface PipelineColumn {

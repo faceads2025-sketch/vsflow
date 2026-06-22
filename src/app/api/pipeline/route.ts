@@ -32,6 +32,7 @@ export async function GET() {
       shopeeDate: c.shopeeDate || null,
       orderValue: c.orderValue ?? null,
       commitmentAudioUrl: c.commitmentAudioUrl || null,
+      billingDate: c.billingDate || null,
     };
   });
 

@@ -1,8 +1,10 @@
 import { NextResponse } from "next/server";
 import { db } from "@/lib/mock-data";
 import { getConfig } from "@/lib/integration-config";
+import { startScheduler } from "@/lib/scheduler";
 
 export async function GET() {
+  startScheduler(); // garante que o agendador de cobrança está rodando
   const conns = getConfig().connections;
   const list = db.conversations
     .slice()

@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from "next/server";
 import { uid, upsertConversation } from "@/lib/mock-data";
 import { handleInboundForFlow } from "@/lib/flow-engine";
+import { startScheduler } from "@/lib/scheduler";
 
 // guarda os últimos payloads crus para diagnóstico (GET nesta mesma rota)
 const g = globalThis as unknown as { __zapiLast?: any[]; __zapiSeen?: string[] };
@@ -23,6 +24,7 @@ function mediaUrlOf(node: any): string | undefined {
 
 // Webhook de mensagens recebidas do Z-API ("Ao receber").
 export async function POST(req: NextRequest) {
+  startScheduler(); // mantém o agendador de cobrança vivo mesmo com o painel fechado
   const sp = new URL(req.url).searchParams;
   // proteção opcional: se WEBHOOK_SECRET estiver definido, exige ?key=SECRET
   const secret = process.env.WEBHOOK_SECRET;
@@ -113,7 +115,7 @@ export async function POST(req: NextRequest) {
 
 // GET = inspeção dos últimos payloads recebidos (diagnóstico)
 export async function GET() {
-  return NextResponse.json({ version: "finance-salescol-v2", count: g.__zapiLast!.length, last: g.__zapiLast });
+  return NextResponse.json({ version: "cobranca-agendada-v1", count: g.__zapiLast!.length, last: g.__zapiLast });
 }
 
 export const dynamic = "force-dynamic";

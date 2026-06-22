@@ -18,7 +18,11 @@ export async function GET(_req: NextRequest, { params }: { params: { id: string 
     shopeeDate: contact.shopeeDate || null,
     orderValue: contact.orderValue ?? null,
     commitmentAudioUrl: contact.commitmentAudioUrl || null,
+    billingDate: contact.billingDate || null,
+    billingFlowId: contact.billingFlowId || null,
+    billingFired: contact.billingFired || false,
     clientAudios,
+    flows: db.flows.filter((f) => f.status === "published").map((f) => ({ id: f.id, name: f.name })),
   });
 }
 
@@ -31,6 +35,14 @@ export async function POST(req: NextRequest, { params }: { params: { id: string 
   if ("deliveryStatus" in body) contact.deliveryStatus = body.deliveryStatus || undefined;
   if ("shopeeDate" in body) contact.shopeeDate = body.shopeeDate || undefined;
   if ("orderValue" in body) contact.orderValue = body.orderValue != null && !isNaN(Number(body.orderValue)) ? Number(body.orderValue) : undefined;
+
+  // cobrança agendada
+  if ("billingDate" in body) {
+    const novo = body.billingDate || undefined;
+    if (novo !== contact.billingDate) contact.billingFired = false; // mudou a data -> re-arma
+    contact.billingDate = novo;
+  }
+  if ("billingFlowId" in body) contact.billingFlowId = body.billingFlowId || undefined;
 
   if ("commitmentAudioUrl" in body) {
     contact.commitmentAudioUrl = body.commitmentAudioUrl || undefined;

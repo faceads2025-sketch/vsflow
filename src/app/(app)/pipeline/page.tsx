@@ -14,7 +14,7 @@ import {
   type DragStartEvent,
   type DragEndEvent,
 } from "@dnd-kit/core";
-import { Plus, Search, MoreVertical, Trash2, Pencil, X, MessageSquare, Truck, Calendar, DollarSign, Mic, MessageSquareText } from "lucide-react";
+import { Plus, Search, MoreVertical, Trash2, Pencil, X, MessageSquare, Truck, Calendar, DollarSign, Mic, MessageSquareText, CalendarClock } from "lucide-react";
 import { PageHeader } from "@/components/ui";
 import { formatDate } from "@/lib/utils";
 
@@ -47,6 +47,8 @@ interface Lead {
   shopeeDate?: string | null;
   orderValue?: number | null;
   commitmentAudioUrl?: string | null;
+  billingDate?: string | null;
+  billingFlowId?: string | null;
 }
 interface Column {
   id: string;
@@ -279,7 +281,7 @@ function CardInner({ lead, dragging, onMenu }: { lead: Lead; dragging?: boolean;
       </div>
 
       {/* detalhes do pedido (AfterPay) */}
-      {(delivery || lead.orderValue != null || lead.shopeeDate || lead.commitmentAudioUrl) && (
+      {(delivery || lead.orderValue != null || lead.shopeeDate || lead.commitmentAudioUrl || lead.billingDate) && (
         <div className="mt-2 flex flex-wrap items-center gap-1.5">
           {delivery && (
             <span className="pill !px-2 !py-0.5 !text-[10px]" style={{ background: delivery.color + "22", color: delivery.color }}>
@@ -291,6 +293,9 @@ function CardInner({ lead, dragging, onMenu }: { lead: Lead; dragging?: boolean;
           )}
           {lead.shopeeDate && (
             <span className="pill !px-2 !py-0.5 !text-[10px] bg-gray-100 text-ink-soft"><Calendar className="h-3 w-3" /> {lead.shopeeDate.split("-").reverse().join("/")}</span>
+          )}
+          {lead.billingDate && (
+            <span className="pill !px-2 !py-0.5 !text-[10px] bg-amber-50 text-amber-700"><CalendarClock className="h-3 w-3" /> cobrar {lead.billingDate.split("-").reverse().slice(0, 2).join("/")}</span>
           )}
           {lead.commitmentAudioUrl && (
             <span className="pill !px-2 !py-0.5 !text-[10px] bg-indigo-50 text-indigo-600"><Mic className="h-3 w-3" /> comprovante</span>
@@ -323,10 +328,20 @@ function CardDetailsModal({ lead, onClose, onSaved }: { lead: Lead; onClose: () 
   const [orderValue, setOrderValue] = useState<string>(lead.orderValue != null ? String(lead.orderValue) : "");
   const [audioUrl, setAudioUrl] = useState<string>(lead.commitmentAudioUrl || "");
   const [clientAudios, setClientAudios] = useState<{ url: string; at: string }[]>([]);
+  const [billingDate, setBillingDate] = useState<string>(lead.billingDate || "");
+  const [billingFlowId, setBillingFlowId] = useState<string>(lead.billingFlowId || "");
+  const [flows, setFlows] = useState<{ id: string; name: string }[]>([]);
+  const [billingFired, setBillingFired] = useState<boolean>(false);
   const [saving, setSaving] = useState(false);
 
   useEffect(() => {
-    fetch(`/api/pipeline/card/${lead.contactId}`).then((r) => r.json()).then((d) => setClientAudios(d.clientAudios || []));
+    fetch(`/api/pipeline/card/${lead.contactId}`).then((r) => r.json()).then((d) => {
+      setClientAudios(d.clientAudios || []);
+      setFlows(d.flows || []);
+      setBillingFired(d.billingFired || false);
+      if (d.billingDate) setBillingDate(d.billingDate);
+      if (d.billingFlowId) setBillingFlowId(d.billingFlowId);
+    });
   }, [lead.contactId]);
 
   async function save() {
@@ -339,6 +354,8 @@ function CardDetailsModal({ lead, onClose, onSaved }: { lead: Lead; onClose: () 
         shopeeDate: shopeeDate || null,
         orderValue: orderValue === "" ? null : Number(orderValue.replace(",", ".")),
         commitmentAudioUrl: audioUrl || null,
+        billingDate: billingDate || null,
+        billingFlowId: billingFlowId || null,
       }),
     });
     setSaving(false);
@@ -373,6 +390,21 @@ function CardDetailsModal({ lead, onClose, onSaved }: { lead: Lead; onClose: () 
         {/* valor do pedido (com promo) */}
         <label className="mb-1 block text-xs font-semibold text-ink-soft">Valor do pedido (R$) — aceita promoção</label>
         <input type="number" step="0.01" min="0" inputMode="decimal" value={orderValue} onChange={(e) => setOrderValue(e.target.value)} placeholder="0,00" className="input mb-4" />
+
+        {/* cobrança agendada */}
+        <div className="mb-4 rounded-xl border border-amber-200 bg-amber-50/60 p-3">
+          <p className="mb-2 flex items-center gap-1.5 text-xs font-semibold text-amber-700"><CalendarClock className="h-4 w-4" /> Cobrança automática no dia do pagamento</p>
+          <label className="mb-1 block text-xs font-medium text-ink-soft">Dia que o cliente vai pagar</label>
+          <input type="date" value={billingDate} onChange={(e) => setBillingDate(e.target.value)} className="input mb-3" />
+          <label className="mb-1 block text-xs font-medium text-ink-soft">Fluxo de cobrança (dispara nesse dia)</label>
+          <select value={billingFlowId} onChange={(e) => setBillingFlowId(e.target.value)} className="input">
+            <option value="">— escolher fluxo —</option>
+            {flows.map((f) => <option key={f.id} value={f.id}>{f.name}</option>)}
+          </select>
+          <p className="mt-1.5 text-[11px] text-amber-700">
+            {billingFired ? "✅ Cobrança já foi disparada (mude a data para reagendar)." : "No dia escolhido (horário comercial), o robô dispara esse fluxo automaticamente."}
+          </p>
+        </div>
 
         {/* áudio de compromisso de pagamento (do cliente) */}
         <label className="mb-1 block text-xs font-semibold text-ink-soft">Áudio de compromisso de pagamento (do cliente)</label>
